@@ -14,11 +14,14 @@ def is_launching(page):
 _TAP = """() => {
     if (typeof settings !== 'object') return null;                       // the app has not started yet
     if (!document.body.classList.contains('launching')) return false;    // nothing to do
-    const tab = settings.tab || 'dashboard';
+    let tab = settings.tab || 'dashboard';
+    const wantShopping = tab === 'shopping';                              // SHP2: Shopping is a screen of its own; the bar piece it lights is Painting
+    if (wantShopping) tab = 'recipes';
     // X2: Settings, Help and Updates are pages of the fourth segment (Tools and Settings, data-tab guides); the header cog is gone
     const page = ['about', 'guides', 'compendium', 'settings', 'help', 'updates'].includes(tab);
     document.querySelector('.tabs button[data-tab="' + (page ? 'guides' : tab) + '"]').click();
     if (page && ['about', 'settings', 'help', 'updates'].includes(tab)) document.querySelector('#more-seg button[data-page="' + tab + '"]').click();
+    if (wantShopping) openShopping();
     return true;
 }"""
 

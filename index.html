@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=167"></script>
-  <script src="early.js?v=167"></script>
+  <script src="mentor-looks.js?v=168"></script>
+  <script src="early.js?v=168"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -466,6 +466,18 @@
     .app-actions .basket:active { transform: scale(0.94); }
     .app-actions .basket.pop { animation: basket-pop 0.35s var(--motion-ease-out); }
     @keyframes basket-pop { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }   /* AB4 (AT-57): a small swell, no overshoot */
+    /* SHP2: the Shopping button and the Shopping screen. The button is the basket pill with the word Shopping and, once the list holds anything, its count in a small
+       badge (a number, so the count never rests on colour). It shows on every screen; its tap area is the ::after box above (48 px tall, wider than the pill). The screen
+       is a title, the Show shop links row, the Paints / Gear / Wishlist row (a .seg.tab-row like the others) and one panel; Wishlist rows reuse li.wish-row. */
+    .app-actions .basket { gap: 5px; padding: 0 9px 0 7px; }
+    .app-actions .basket .basket-label { white-space: nowrap; }
+    .app-actions .basket .basket-count { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 18px; height: 18px; padding: 0 5px; margin-right: -4px; border-radius: 9px; background: var(--on-accent); color: var(--accent-fill, var(--accent)); font-size: 12px; font-weight: 800; line-height: 1; }
+    @media (max-width: 359.98px) { .app-actions .basket { gap: 4px; padding: 0 7px 0 6px; font-size: 12px; } .app-actions .basket .basket-count { margin-right: -3px; } }
+    #view-shopping .shop-links-row { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 0 0 4px; color: var(--text); font-size: 0.9375rem; cursor: pointer; }
+    #view-shopping .shop-links-row input { flex: none; }
+    #view-shopping .shop-wish-list { margin-top: 12px; }
+    #view-shopping .shop-empty { margin: 12px 0; }
+    #view-shopping .shop-copy-row { margin-top: 12px; }
     .shop-list .shop-from { display: block; color: var(--muted); margin-top: 1px; }
     /* Scrolling to the Paint Picker (the chip in the Mentor window) stops below the sticky header. */
     .fold, .lab-section { scroll-margin-top: 72px; }
@@ -3317,9 +3329,9 @@
     <header class="app-bar">
       <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <button type="button" class="version-tag" id="version-tag" title="Updates"></button></h1>
       <p class="start-line" id="start-line">Track. Paint. Learn.</p>
-      <nav class="app-actions" aria-label="Shopping list">
-        <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
-        <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
+      <nav class="app-actions" aria-label="Shopping">
+        <!-- SHP2: the Shopping button: basket icon, the word Shopping and a count (paints and Gear on the list; no count at none). Shown on every screen. Filled and wired by updateBasket() in app.js. -->
+        <button type="button" class="basket" id="basket-button" aria-label="Shopping"></button>
       </nav>
     </header>
 
@@ -3482,12 +3494,11 @@
       <div class="card notice-card draft-card hidden" id="draft-card-recipe" role="note"></div>
       <div class="card notice-card draft-card hidden" id="draft-card-paste" role="note"></div>
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
-      <div class="seg tab-row" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab, palette or shopping list">
+      <div class="seg tab-row" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab or palette">
         <button role="tab" data-view="recipes">Recipes</button>
         <button role="tab" data-view="schemes">Schemes</button>
         <button role="tab" data-view="colourlab">Colour Lab</button>
         <button role="tab" data-view="palette">Your Palette</button>
-        <button role="tab" data-view="shopping">Shopping</button>
       </div>
 
       <!-- Painting schemes (v9): named groups of recipes for a faction. Filled by renderSchemes(). -->
@@ -3539,11 +3550,6 @@
         </div>
       </div>
 
-      <!-- v40: the Shopping list, its own switch next to Your Palette. Filled by renderShopPanel(). -->
-      <div id="shopping-view" class="hidden">
-        <div id="shop-panel"></div>
-      </div>
-
       <!-- v78: on wide screens an open recipe shows beside the list (layout-split is switched on by renderRecipes() only then). -->
       <div id="recipe-split" class="layout-detail-wide">
       <div id="recipe-home" class="layout-main">
@@ -3562,6 +3568,21 @@
       </div>
       <!-- v16: Paste recipes (text box, preview, confirm). Filled by renderImport(). -->
       <div id="import-page" class="hidden"></div>
+    </section>
+
+    <!-- SHP2: Shopping, a screen of its own (it was a tab inside Painting). The Paints, Gear and Wishlist tabs are filled by renderShopping() in app.js.
+         It sits under the Painting segment of the menu bar (barOf). #shop-panel is still the Paints list, as it was. -->
+    <section id="view-shopping" class="hidden">
+      <h2 class="more-title" id="shopping-title">Shopping</h2>
+      <label class="check-label shop-links-row"><input type="checkbox" id="shop-links-switch"> Show shop links</label>
+      <div class="seg tab-row" id="shop-seg" role="tablist" aria-label="Paints, Gear or Wishlist">
+        <button role="tab" data-stab="paints">Paints</button>
+        <button role="tab" data-stab="gear">Gear</button>
+        <button role="tab" data-stab="wishlist">Wishlist</button>
+      </div>
+      <div id="shop-panel"></div>
+      <div id="shop-gear-panel" class="hidden"></div>
+      <div id="shop-wish-panel" class="hidden"></div>
     </section>
 
     <!-- v21.9, X2: Guides, Settings, Help and Updates share ONE main tab (Tools and Settings). This switch (same style as
@@ -3652,7 +3673,7 @@
             <li>Check the <strong>Nexus</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket is always at the top right on Painting pages, and on other pages once your list has something. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The <strong>Shopping</strong> button, a basket with the word Shopping and a count, is at the top right of every screen. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;">Tap the round <strong>Ask Mentor</strong> button. Type a question, or tap <strong>Suggestions</strong> and pick one. Under the answer, <strong>Read the guide</strong> or a guide link opens that guide.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Nexus. On the Nexus, with nothing open, it leaves the app.</p>
         </details>
@@ -3661,7 +3682,7 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
-            <li id="help-wish-list">The <strong>Wishlist</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back. Paints you mark Wishlist go on your shopping list; models you want stay here until you press Got it.</li>
+            <li id="help-wish-list">The <strong>Wishlist</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back. Paints you mark Wishlist go on your shopping list; models you want stay here until you press Got it. The <strong>Wishlist</strong> tab on the Shopping screen shows the same models, with the same Got it.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
@@ -3770,11 +3791,12 @@
             <li id="help-scan-brands">The scanner knows Citadel, Warhammer Tone Pro (each colour in its five tones, 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021). If the scanner doesn't know a name, type it in. Where two brands share a name (like "Black"), you're asked which one. The colours are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints that are in the paint list: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). A name that isn't in the paint list (a typo, say) is kept as typed with no status, and can still go on the shopping list.</li>
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
-            <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
+            <li id="help-shop-tick">On the <strong>Shopping</strong> screen, tick a paint or a Gear item when you have bought it: it moves to <strong>Bought</strong> at the bottom of its tab, and a paint is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget that tab's bought items. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
-            <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in a <strong>Gear</strong> section under your paints, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the basket and in Copy as text. Settings → Your data → Shop links hides the links but not the Add button.</li>
-            <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Each opens that shop's own search for the paint's name in a new tab, so check you've got the right pot before you buy. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.</li>
-            <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and the Guides sections use the full width.</li>
+            <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in the <strong>Gear</strong> tab on the Shopping screen, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the Shopping button and in Copy as text. Settings → Your data → Shop links hides the links but not the Add button.</li>
+            <li id="help-shop"><strong>Shopping</strong> is a screen of its own: tap the Shopping button at the top of any screen. It has three tabs. <strong>Paints</strong> lists the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Each opens that shop's own search for the paint's name in a new tab, so check you've got the right pot before you buy. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.</li>
+            <li id="help-shopping-tabs"><strong>Gear</strong> holds the things added from Where to buy. <strong>Wishlist</strong> shows the models on your Models Wishlist, with their count and note. Tap one to open it in Models, or press <strong>Got it</strong> to move it into Models (Undo puts it back). The number on the Shopping button counts paints and Gear only. <strong>Copy as text</strong> lists Paints, Gear and Wishlist under their own headings. <strong>Show shop links</strong> at the top of the screen is the same switch as in Settings.</li>
+            <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Paints tab, and the Guides sections use the full width.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Your data → Shop links</strong>. Your shopping list stays.</li>
             <li id="help-colour-lab"><strong>Colour Lab</strong> (in Painting): the colour wheel, <strong>Colour ideas</strong>, <strong>Colour plans</strong>, <strong>Colours you've used</strong> and the <strong>Paint Picker</strong>. Suggested paints show a fit and your own paints come first.</li>
             <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. <strong>Colour Lab</strong> opens with that paint's ideas at the top: colours that go with it, colour plans with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you back.</li>
@@ -4158,7 +4180,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=167" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=168" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4171,16 +4193,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=167"></script>
-  <script src="schemes.js?v=167"></script>
-  <script src="detail-recipes.js?v=167"></script>
-  <script src="basing-tips.js?v=167"></script>
-  <script src="mentor-tips.js?v=167"></script>
-  <script src="guides-data.js?v=167"></script>
-  <script src="guides-groups.js?v=167"></script>
-  <script src="mentor-data.js?v=167"></script>
-  <script src="mentor-engine.js?v=167"></script>
-  <script src="where-to-buy.js?v=167"></script>
-  <script src="app.js?v=167"></script>
+  <script src="colour.js?v=168"></script>
+  <script src="schemes.js?v=168"></script>
+  <script src="detail-recipes.js?v=168"></script>
+  <script src="basing-tips.js?v=168"></script>
+  <script src="mentor-tips.js?v=168"></script>
+  <script src="guides-data.js?v=168"></script>
+  <script src="guides-groups.js?v=168"></script>
+  <script src="mentor-data.js?v=168"></script>
+  <script src="mentor-engine.js?v=168"></script>
+  <script src="where-to-buy.js?v=168"></script>
+  <script src="app.js?v=168"></script>
 </body>
 </html>

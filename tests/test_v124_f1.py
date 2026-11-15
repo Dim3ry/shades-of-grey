@@ -35,11 +35,10 @@ PAINTS = [P(1, "Alpha Empty", status="empty"), P(2, "Beta Needed", status="notow
           P(12, "Example Real", example=True, status="notowned"),   # an example paint with a real brand, used only by an example recipe
           P(13, "Kappa Listed", status="wishlist")]
 EXAMPLE_REC = dict(t.rec(2, "Example", "Armour", [12]), example=True)
-SETTINGS = {"tab": "recipes", "recipeView": "shopping", "examplesChecked": True, "recipeExamplesChecked": True}
+SETTINGS = {"tab": "shopping", "examplesChecked": True, "recipeExamplesChecked": True}
 
 def open_shop(page):
-    page.evaluate("() => { settings.recipeView = 'shopping'; renderRecipes(); }")
-    page.click('nav button[data-tab="recipes"]')
+    page.evaluate("() => openShopping()")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
     page.wait_for_selector("#shop-panel .card")
 
 def suggested(page):
@@ -50,7 +49,8 @@ def names(page):
     return [r["name"] for r in suggested(page)]
 
 def basket(page):
-    return page.inner_text("#basket-button").strip()
+    loc = page.locator("#basket-button .basket-count")   # SHP2: the count is the badge (the button also holds the word Shopping)
+    return loc.inner_text().strip() if loc.count() else ""
 
 def paint(page, pid):
     return page.evaluate("(id) => { const p = book.paints.find(x => x.id === id); return { s: paintStatus(p), d: p.shopDismissed === true, from: p.shopFrom || [] }; }", pid)

@@ -39,15 +39,15 @@ def open_entry(page, key, kind="guide"):
     page.wait_for_timeout(150)
 
 def open_shop(page):
-    page.evaluate("() => { settings.recipeView = 'shopping'; renderRecipes(); }")
-    page.click('nav button[data-tab="recipes"]')
+    page.evaluate("() => openShopping()")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
     page.wait_for_selector("#shop-panel .card")
 
 def gear(page):
     return page.evaluate("() => JSON.parse(JSON.stringify(book.gear || []))")
 
 def basket(page):
-    return page.inner_text("#basket-button").strip() if page.locator("#basket-button:not(.hidden)").count() else "hidden"
+    loc = page.locator("#basket-button .basket-count")   # SHP2: the count is the badge; the button always shows now, so "hidden" is no longer a state ("" = no count)
+    return loc.inner_text().strip() if loc.count() else ""
 
 def small_taps(page, scope):
     return page.evaluate("""(s) => [...document.querySelectorAll(s + ' button, ' + s + ' a, ' + s + ' summary')].filter(b => b.offsetParent)

@@ -56,14 +56,14 @@ def tab(page, name):
 
 def open_shopping(page):
     tab(page, "recipes")
-    page.click('#recipe-seg button[data-view="shopping"]')
+    page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
     page.wait_for_timeout(150)
 
 def items(page):
     return page.evaluate("() => [...document.querySelectorAll('#shop-panel .shop-list li')].map(li => li.textContent.replace(/\\s+/g, ' ').trim())")
 
 def count_text(page):
-    return page.evaluate("() => { const b = document.getElementById('basket-button'); return b.classList.contains('hidden') ? '' : b.textContent.trim(); }")
+    return page.evaluate("() => { const b = document.getElementById('basket-button'); const n = b.querySelector('.basket-count'); return n ? n.textContent.trim() : ''; }   /* SHP2: the count is the badge; the button always shows and holds the word Shopping too */")
 
 def main():
     with sync_playwright() as p:
@@ -92,16 +92,16 @@ def main():
         print("\n--- 2. The new switch ---")
         tab(page, "recipes")
         labels = page.evaluate("() => [...document.querySelectorAll('#recipe-seg button')].map(b => b.textContent.trim())")
-        check("the Recipes switch now reads Recipes, Schemes, Colour Lab, Your Palette, Shopping", labels == ["Recipes", "Schemes", "Colour Lab", "Your Palette", "Shopping"], labels)   # X1: Colour Lab added
+        check("the Recipes switch reads Recipes, Schemes, Colour Lab, Your Palette", labels == ["Recipes", "Schemes", "Colour Lab", "Your Palette"], labels)   # X1: Colour Lab added. SHP2: Shopping is a screen of its own now, so it is no longer a tab here
         page.click('#recipe-seg button[data-view="palette"]')
         page.wait_for_timeout(150)
         check("Your Palette no longer has a shopping list button or panel under it",
               page.locator("#palette-view #shop-button").count() == 0 and page.locator("#palette-view #shop-panel").count() == 0)
-        page.click('#recipe-seg button[data-view="shopping"]')
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(150)
         check("Shopping opens its own page: the list is showing, the palette and recipe list are hidden, and it is the selected part",
               page.is_visible("#shop-panel") and not page.is_visible("#paint-list") and not page.is_visible("#recipe-home")
-              and page.get_attribute('#recipe-seg button[data-view="shopping"]', "aria-selected") == "true")
+              and page.evaluate("() => settings.tab") == "shopping")   # SHP2: it is a screen of its own, not a selected Painting tab
         page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'"); page.wait_for_timeout(300)
         t.leave_launch(page)   # U4b (v89): a reload shows the start page; tapping Painting goes back in to the remembered Shopping part
         check("after a reload and a tap on Painting the app comes back on Shopping (the choice is remembered)", page.is_visible("#shop-panel"))
@@ -174,16 +174,16 @@ def main():
         check("the basket shows the same count on all five tabs", all(v == (str(n), True) for v in seen.values()) and n >= 3, seen)   # v62: 3 (was 4 or more with running low and empty)
         shot(page, "v40-basket-390.png")
         load(page, paints=[P(1, "Owned One")], recipes=[])
-        check("with nothing to buy the basket is hidden", count_text(page) == "" and not page.is_visible("#basket-button"))
+        check("with nothing to buy the Shopping button still shows, with no count", count_text(page) == "" and page.is_visible("#basket-button"))   # SHP2: it shows on every screen now (it used to hide at 0 off Painting)
         page.evaluate("() => { addToShoppingList({ brand: 'B', name: 'New Paint' }, 'Recipe: Test'); }")
         check("adding a paint raises the count at once, without leaving the page", count_text(page) == "1", count_text(page))
         load(page, paints=PAINTS, recipes=RECIPES)
         tab(page, "dashboard")
         page.click("#basket-button")
         page.wait_for_timeout(250)
-        check("tapping the basket on the Dashboard opens Recipes on the Shopping switch",
+        check("tapping the Shopping button on the Dashboard opens the Shopping screen (the Painting piece of the bar stays lit)",   # SHP2: was "opens Recipes on the Shopping switch"
               page.is_visible("#shop-panel") and page.get_attribute('nav button[data-tab="recipes"]', "aria-current") == "page"
-              and page.get_attribute('#recipe-seg button[data-view="shopping"]', "aria-selected") == "true")
+              and page.evaluate("() => settings.tab") == "shopping")
         tab(page, "settings")
         page.focus("#basket-button")
         page.keyboard.press("Enter")
@@ -207,8 +207,8 @@ def main():
         panel = page.evaluate("() => ({ html: document.getElementById('shop-panel').innerHTML, pwned: window.__pwned || 0, bad: document.querySelectorAll('#shop-panel img, #shop-panel script, #shop-panel b').length, text: document.getElementById('shop-panel').textContent })")
         check("hostile paint, brand, recipe and source text show as plain words: no picture, script or bold appears and nothing runs",
               panel["pwned"] == 0 and panel["bad"] == 0 and "<img" in panel["text"] and "&lt;img" in panel["html"], panel["bad"])
-        check("the basket holds only a picture and a number", page.evaluate("() => [...document.getElementById('basket-button').children].map(c => c.tagName).join()") == "svg,SPAN"
-              and re.fullmatch(r"\d+", page.inner_text("#basket-button").strip()) is not None)
+        check("the basket holds only a picture, the word Shopping and a number", page.evaluate("() => [...document.getElementById('basket-button').children].map(c => c.tagName).join()") == "svg,SPAN,SPAN"   # SHP2: the word was added
+              and re.fullmatch(r"\d+", page.inner_text("#basket-button .basket-count").strip()) is not None)
         copy = page.evaluate("() => shoppingText(shoppingItems())")
         check("Copy as text keeps the hostile words as plain text", "<img" in copy and "<script>" in copy)
 
@@ -220,8 +220,8 @@ def main():
                 load(page, paints=PAINTS, recipes=RECIPES, settings={"appearance": appearance})
                 open_shopping(page)
                 tag = f"{appearance} {width}px"
-                fits = page.evaluate("() => [...document.querySelectorAll('#recipe-seg button')].every(b => b.scrollWidth <= b.clientWidth + 1)")
-                check(f"{tag}: the four switch buttons all fit their words", fits)
+                fits = page.evaluate("() => [...document.querySelectorAll('#shop-seg button')].every(b => b.scrollWidth <= b.clientWidth + 1)")   # SHP2: the Shopping screen's own three tabs
+                check(f"{tag}: the Shopping tabs all fit their words", fits)
                 check(f"{tag}: nothing scrolls sideways", no_sideways(page))
                 # U4a: the basket moved from the tab bar into the header, next to the Settings cog (the colours and the pop are unchanged)
                 box = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); return { l: r.left, r: r.right, top: r.top, h: r.height, w: window.innerWidth }; }")

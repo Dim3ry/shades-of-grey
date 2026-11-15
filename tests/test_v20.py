@@ -298,7 +298,7 @@ def main():
             tab(page, name)
             page.screenshot(path=os.path.join(SHOTS, f"v20-light-{name}.png"), full_page=True)
         page.evaluate("openRecipeId = null; settings.recipeView = 'palette'; showTab('recipes'); renderRecipes()")
-        page.click("#recipe-seg button[data-view='shopping']"); page.wait_for_timeout(100)
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'"); page.wait_for_timeout(100)
         page.locator("#buy-bar .buy-shops button").first.click(); page.wait_for_timeout(100)
         page.screenshot(path=os.path.join(SHOTS, "v20-light-palette-shopping.png"), full_page=True)
         page.evaluate("startImport()")

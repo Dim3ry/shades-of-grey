@@ -171,7 +171,7 @@ with sync_playwright() as pw:
         # ---- Shopping list ----
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='palette']")
-        page.click("#recipe-seg button[data-view='shopping']")
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         text = page.evaluate("shoppingText(shoppingItems())")
         check(f"{size}: shopping list text", text == EXPECTED_SHOPPING, text)
         check(f"{size}: shop panel shows copy button", page.locator("#shop-panel button", has_text="Copy as text").count() == 1)

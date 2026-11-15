@@ -114,6 +114,12 @@ def run_pages(page, width, mode):
     tab(page, "recipes")
     scan(page, f"{tag}, Recipes")   # RS2: Parts and techniques moved to Settings
     for view in ("palette", "shopping", "recipes"):
+        if view == "shopping":   # SHP2: Shopping is a screen of its own, opened by the header button; the Painting tab row is then shown again for the next view
+            page.evaluate("() => document.getElementById('basket-button').click()")
+            page.wait_for_timeout(200)
+            scan(page, f"{tag}, Shopping")
+            tab(page, "recipes")
+            continue
         page.evaluate("(v) => document.querySelector('#recipe-seg button[data-view=\"' + v + '\"]').click()", view)
         page.wait_for_timeout(200)
         scan(page, f"{tag}, Recipes, {view}")

@@ -41,23 +41,24 @@ def main():
                 page.click('nav button[data-tab="recipes"]'); quiet(page)
                 d = basket(page)
                 check(f"{tag}: the basket shows on Painting with an empty list, a picture and no number",
-                      d["shown"] and d["kids"] == "svg" and d["label"] == "Shopping list, empty. Tap to open it.", d)
+                      d["shown"] and d["kids"] == "svg,SPAN" and d["label"] == "Shopping, empty", d)   # SHP2: the button is a picture and the word Shopping; no count at 0, label reworded
                 check(f"{tag}: it is a 44 px tap area, inside the screen, not over the title, no sideways scroll",
                       d["tapH"] >= 44 and d["inside"] and d["clear"] and not d["scrollX"], d)
                 if (w, mode) == (390, "dark"):
-                    for view in ("recipes", "palette", "schemes", "shopping", "colourlab"):
+                    for view in ("recipes", "palette", "schemes", "colourlab"):   # SHP2: Shopping is no longer a Painting tab
                         page.click(f'#recipe-seg button[data-view="{view}"]'); page.wait_for_timeout(300)
-                        check(f"the basket shows on the Painting {view} page when empty", basket(page)["shown"] and basket(page)["kids"] == "svg", basket(page))
+                        check(f"the basket shows on the Painting {view} page when empty", basket(page)["shown"] and basket(page)["kids"] == "svg,SPAN", basket(page))   # SHP2: picture + word
                     page.click('#basket-button'); page.wait_for_timeout(300)
                     check("tapping the empty basket opens Shopping", page.is_visible("#shop-panel"))
                     for tab in ("units", "dashboard"):
                         page.click(f'nav button[data-tab="{tab}"]'); quiet(page)
-                        check(f"the basket is not on {tab} while the list is empty", not basket(page)["shown"], basket(page))
+                        # SHP2: the Shopping button now shows on every screen, even with an empty list (it used to hide off Painting)
+                        check(f"the Shopping button is on {tab} while the list is empty", basket(page)["shown"], basket(page))
                     page.click('nav button[data-tab="recipes"]'); quiet(page)
                     check("coming back to Painting shows it again", basket(page)["shown"])
                     page.evaluate("() => { addToShoppingList({ brand: 'B', name: 'New Paint' }, 'Recipe: Test'); }")
                     d = basket(page)
-                    check("with one item it shows the number 1", d["shown"] and d["kids"] == "svg,SPAN" and page.inner_text("#basket-button").strip() == "1", d)
+                    check("with one item it shows the number 1", d["shown"] and d["kids"] == "svg,SPAN,SPAN" and page.inner_text("#basket-button .basket-count").strip() == "1", d)   # SHP2: picture, word, count
                     page.click('nav button[data-tab="units"]'); quiet(page)
                     check("with an item the basket also shows on Models", basket(page)["shown"])
                 ctx.close()
@@ -84,7 +85,7 @@ def main():
         check("the Wishlist view says Wishlist (SHP1)", "Wishlist" in txt, txt[:300])
         page.click('#models-seg button[data-mview="models"]')
         help_text = page.evaluate("document.getElementById('help-wish-list').textContent + '|' + document.getElementById('help-tabs').textContent")
-        check("Help names Wanted and the basket on Painting", "Wishlist" in help_text and "Wish list" not in help_text and "always at the top right on Painting" in help_text, help_text)
+        check("Help names Wanted and the basket on Painting", "Wishlist" in help_text and "Wish list" not in help_text and "top right of every screen" in help_text, help_text)   # SHP2: the button is on every screen
         ctx.close()
         browser.close()
     check("no page errors", not errors, errors)

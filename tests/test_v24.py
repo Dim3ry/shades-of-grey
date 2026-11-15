@@ -90,7 +90,12 @@ def sub_tab(page, name):
     page.wait_for_timeout(150)
 
 def recipe_view(page, view):
-    page.click(f'#recipe-seg button[data-view="{view}"]')
+    if view == "shopping":   # SHP2: Shopping is a screen of its own now; the header Shopping button opens it
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
+    else:
+        if page.evaluate("() => settings.tab") == "shopping":   # SHP2: coming back from the Shopping screen to a Painting tab: tap the Painting piece first
+            page.click('nav button[data-tab="recipes"]')
+        page.click(f'#recipe-seg button[data-view="{view}"]')
     quiet(page)
 
 def shot(page, name):
@@ -386,7 +391,7 @@ def main():
         check("example paints are not on the shopping list", page.evaluate("() => shoppingItems().length") == 0)
         main_tab(page, "recipes")
         recipe_view(page, "palette")
-        page.click("#recipe-seg button[data-view='shopping']")
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(200)
         check("the shopping list says there is nothing to buy",
               "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))

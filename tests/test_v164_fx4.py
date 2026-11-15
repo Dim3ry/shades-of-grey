@@ -110,7 +110,7 @@ def main():
         print("\n--- 5. Shopping empty state ---")
         fresh_install(page)
         page.click('nav button[data-tab="recipes"]'); t.quiet(page)
-        page.click('#recipe-seg button:has-text("Shopping")'); t.quiet(page)
+        page.click('#basket-button'); page.wait_for_function("() => settings.tab === 'shopping'"); t.quiet(page)   # SHP2: the Shopping button
         txt = page.inner_text("#shop-panel")
         check("the empty list says what fills it", "Nothing to buy." in txt and "Wishlist" in txt, txt[:200])
         page.evaluate("applyPaintStatus(findOrAddPaint('Citadel', 'Mournfang Brown', '#5a3a1a'), 'wishlist'); render()")

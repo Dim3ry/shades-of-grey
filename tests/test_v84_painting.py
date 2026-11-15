@@ -37,7 +37,7 @@ def main():
         check("the tab bar says Painting", tab_text(page) == "Painting", tab_text(page))
         subs = page.evaluate("() => [...document.querySelectorAll('#recipe-seg button')].map(b => b.textContent.trim())")
         # X1: Colour Lab was added between Schemes and Your Palette
-        check("the sub-tabs keep their names", subs == ["Recipes", "Schemes", "Colour Lab", "Your Palette", "Shopping"], subs)
+        check("the sub-tabs keep their names", subs == ["Recipes", "Schemes", "Colour Lab", "Your Palette"], subs)   # SHP2: Shopping moved out of the Painting tabs
 
         print("\n--- 2. Empty states ---")
         empty = page.locator("#recipe-list li.empty")

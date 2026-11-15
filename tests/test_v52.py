@@ -51,7 +51,7 @@ def more_page(page, name):
 
 def open_shopping(page):
     tab(page, "recipes")
-    page.click('#recipe-seg button[data-view="shopping"]')
+    page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
     page.wait_for_timeout(150)
 
 def paints_with_needs():
@@ -123,9 +123,9 @@ def main():
         check("while closed, the sentence, the warning and the shop note are all hidden",
               not any(page.get_by_text(x).first.is_visible() for x in ("paints to get", "No statuses set yet", "Plain links")))
         panel = text(page, "#shop-panel .more-info-panel")
-        check("the panel holds the sentence, the shop note and the shop links words",
+        check("the panel holds the shop note and the shop links words",   # SHP2: the "N paints to get." sentence is gone (the Paints tab shows its own count)
               # v75: the sentence is now just "N paints to get." and the shop note is only the plain-links words (SHOP-1, SHOP-4)
-              panel and "paints to get" in panel and "Plain links" in panel, panel)
+              panel and "Plain links" in panel, panel)
         before = v51.all_local(page)
         press(page, page.locator("#shop-panel .more-info-button").first)
         check("tapping it opens the panel, the button keeps its name and aria-expanded is true",   # AB10: no more "Less info"

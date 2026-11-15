@@ -2427,8 +2427,9 @@
       : el.dataset.gear ? (el.closest(".shop-bought") ? "bg" : "g") + el.dataset.gear
       : ([...el.classList].find(c => c.startsWith("shop-")) || el.tagName) + (el.matches(".shop-brand") ? ":" + el.textContent : "");
     function afterShopChange() {
-      return lqFlip(() => document.getElementById("shop-panel"), LQ_SHOP_ROWS, lqShopKey, () => { const ok = render(); updateBasket(); updateShopFoldouts(); return ok; });
+      return lqFlip(shopActivePanel, LQ_SHOP_ROWS, lqShopKey, () => { const ok = render(); updateBasket(); updateShopFoldouts(); return ok; });   // SHP2: the open Shopping tab's panel
     }
+    function refreshShopping() { if (settings.tab === "shopping" && !launching) renderShopping(); }   // SHP2: the open Shopping screen follows a change made from outside it (a Mentor Add)
     function removeFromShoppingList(id) {
       const paint = book.paints.find(p => p.id === id);
       if (!paint || paintStatus(paint) !== "wishlist") return;
@@ -2466,15 +2467,17 @@
       if (!afterShopChange()) { showNotSaved(); return; }
       if (!quiet && paint) showToast(`${paint.name} is back on your shopping list`);
     }
-    function clearBought() {
-      const n = boughtItems().length, g = gearBought().length;   // L1: bought Gear is cleared too (it is deleted: Gear lives only on this list)
-      const question = g ? `Clear ${plural(n + g, "bought item")} from this list for good?${n ? " Paints stay Owned in Your Palette." : ""}`
+    // SHP2: Bought is kept per tab: the Paints tab holds the bought paints, the Gear tab the bought Gear. Clear bought on a tab clears only that tab's.
+    function clearBought(kind) {
+      const gearTab = kind === "gear";
+      const n = gearTab ? gearBought().length : boughtItems().length;
+      const question = gearTab ? `Clear ${plural(n, "bought gear item")} from this list for good?`
         : `Clear ${plural(n, "bought paint")} from this list for good? They stay Owned in Your Palette.`;
       askYesNo(question, () => {
-        delete book.bought;
-        if (g) { book.gear = gearList().filter(x => x.bought !== true); if (!book.gear.length) delete book.gear; }
+        if (gearTab) { book.gear = gearList().filter(x => x.bought !== true); if (!book.gear.length) delete book.gear; }   // L1: bought Gear is deleted (Gear lives only on this list)
+        else delete book.bought;
         if (!afterShopChange()) { showNotSaved(); return; }
-        showToast(g ? "Cleared the bought items" : "Cleared the bought paints");
+        showToast(gearTab ? "Cleared the bought gear" : "Cleared the bought paints");
       }, { danger: true, yes: "Clear" });
     }
 
@@ -2506,8 +2509,9 @@
         setGear(gearList().concat(item));
       }
       const ok = save();
-      if (!recipeDraft) renderRecipes();   // keep the (hidden) shopping list up to date; never rebuild an open recipe editor
+      if (!recipeDraft) renderRecipes();   // keep the (hidden) palette up to date; never rebuild an open recipe editor
       updateBasket();
+      refreshShopping();   // SHP2: Mentor can add while Shopping is open behind it
       updateShopFoldouts();
       if (ok) showToast(`Added ${label} to your shopping list`, () => {
         const g = gearList().find(x => x.id === id);
@@ -2678,8 +2682,8 @@
     // After Add or Dismiss the panel is drawn again, so the focus goes to the next row's Add (or the fold-out's button, or the heading).
     function focusSuggested(index) {
       const adds = document.querySelectorAll("#shop-panel .shop-suggest-add");
-      const el = adds[Math.min(index, adds.length - 1)] || document.querySelector("#shop-panel .shop-suggest-head") || document.querySelector("#shop-panel h2");
-      if (el) { if (el.tagName === "H2") el.tabIndex = -1; el.focus(); }
+      const el = adds[Math.min(index, adds.length - 1)] || document.querySelector("#shop-panel .shop-suggest-head") || document.querySelector('#shop-seg [data-stab="paints"]');   // SHP2: the Paints tab when nothing else is left
+      if (el) el.focus();
     }
     function addSuggested(id, index) {
       const paint = book.paints.find(p => p.id === id);
@@ -2745,9 +2749,13 @@
       return box;
     }
 
-    // The list as plain text, one brand at a time (for copy as text).
-    // L1: then the Gear on the list under its own heading (gear: the Gear items, the ones on the list unless given).
-    function shoppingText(items, gear = gearItems()) {
+    // The list as plain text (for copy as text). SHP2: three headings, Paints (one brand at a time), Gear and Wishlist, and an empty one is left out.
+    // gear: the Gear items on the list; wish: the Wishlist models (wishes()). Both default to what is on the list now.
+    function wishLine(w) {
+      const note = String(w.note || "").replace(/\s+/g, " ").trim();
+      return `- ${w.name} (${plural(cleanCount(w.count), "model")})${note ? `: ${note}` : ""}`;
+    }
+    function shoppingText(items, gear = gearItems(), wish = wishes()) {
       const groups = new Map();
       for (const i of items) {
         const brand = i.paint.brand || "No brand";
@@ -2756,17 +2764,25 @@
       }
       const names = [...groups.keys()].sort((a, b) => (a === "No brand") - (b === "No brand") || a.localeCompare(b));
       const lines = ["Shopping list", ""];
-      for (const brand of names) {
-        lines.push(brand);
-        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
-        lines.push("");
+      if (items.length) {
+        lines.push("Paints");
+        for (const brand of names) {
+          lines.push(brand);
+          for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
+          lines.push("");
+        }
       }
       if (gear.length) {
         lines.push("Gear");
         for (const g of gear) lines.push(`- ${gearLabel(g.name)}${g.from ? ` (from ${g.from})` : ""}`);
         lines.push("");
       }
-      if (!items.length && !gear.length) lines.push("Nothing to buy.");
+      if (wish.length) {
+        lines.push("Wishlist");
+        for (const w of wish) lines.push(wishLine(w));
+        lines.push("");
+      }
+      if (!items.length && !gear.length && !wish.length) lines.push("Nothing to buy.");
       return lines.join("\n").trimEnd();
     }
 
@@ -2856,8 +2872,9 @@
       noteShopSource(mine, source || "Colour suggestion");        // v40
       const undo = bookUndo(before);                              // DS1
       const ok = save();
-      if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette and shopping lists up to date; never rebuild an open recipe editor
+      if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette up to date; never rebuild an open recipe editor
       updateBasket();                                             // v40
+      refreshShopping();                                          // SHP2
       updateShopFoldouts();
       if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { undo(); render(); updateShopFoldouts(); });
       else showNotSaved();
@@ -2915,6 +2932,7 @@
       const ok = save();
       if (!recipeDraft) renderRecipes();
       updateBasket();
+      refreshShopping();   // SHP2
       updateShopFoldouts();
       if (ok) {
         showToast(`Added ${plural(added, "paint")} to your shopping list`, () => {
@@ -3079,53 +3097,96 @@
       return bar;
     }
 
-    // v40: the shopping list is its own tab under Recipes (it used to fold out under Your Palette). Everything typed or pasted is
-    // set with textContent, so it always shows as plain text. renderRecipes() draws it whenever that tab is open.
+    // ----- SHP2: the Shopping screen -----
+    // Shopping is a screen of its own (it was a tab inside Painting): a title, the Show shop links row, then a Paints / Gear / Wishlist
+    // tab row and one panel. Paints is the old shopping list (#shop-panel, renderShopPanel). Gear is its Gear section in a tab of its own.
+    // Wishlist is the Models Wishlist, read only: its rows are drawn from wishes() (no copy of the data), and Got it is the Models one.
+    // The screen is "shopping" in views (settings.tab, the address #shopping); under the Painting piece of the menu bar (barOf). Everything
+    // typed or pasted is set with textContent, so it always shows as plain text. render() redraws it while it is open (DRAWN_TABS).
+    const SHOP_TABS = [{ id: "paints", name: "Paints", panel: "shop-panel" }, { id: "gear", name: "Gear", panel: "shop-gear-panel" },
+                       { id: "wishlist", name: "Wishlist", panel: "shop-wish-panel" }];
+    let shopTab = "paints";      // the open tab (kept while the app is open)
+    let shoppingFrom = null;     // the screen the Shopping button was tapped on ("launch" = the start page), so Back returns there
+    const shopSeg = document.getElementById("shop-seg");
+    function shopActivePanel() { return document.getElementById(SHOP_TABS.find(t => t.id === shopTab).panel); }
+    function shopCounts() { return { paints: shoppingItems().length, gear: gearItems().length, wishlist: wishes().length }; }
+    function renderShopping() {
+      staleTabs.delete("shopping");
+      const counts = shopCounts();
+      for (const b of shopSeg.querySelectorAll(":scope > button")) {
+        const t = SHOP_TABS.find(x => x.id === b.dataset.stab);
+        const label = `${t.name} (${counts[t.id]})`;
+        if (b.textContent !== label) b.textContent = label;
+        b.setAttribute("aria-selected", String(t.id === shopTab));
+      }
+      for (const t of SHOP_TABS) document.getElementById(t.panel).classList.toggle("hidden", t.id !== shopTab);
+      showShopLinksChoice();
+      if (shopTab === "paints") renderShopPanel();
+      else if (shopTab === "gear") renderShopGear();
+      else renderShopWish();
+      updateBasket();
+    }
+    function setShopTab(id) {
+      if (!SHOP_TABS.some(t => t.id === id)) return;
+      shopTab = id;
+      renderShopping();
+    }
+    shopSeg.addEventListener("click", (event) => {
+      const b = event.target.closest("button[data-stab]");
+      if (b) setShopTab(b.dataset.stab);
+    });
+    // Opens the Shopping screen (on a tab if one is named). The Shopping button, and anything that links to the list, comes through here.
+    function openShopping(tab) {
+      if (tab && SHOP_TABS.some(t => t.id === tab)) shopTab = tab;
+      if (settings.tab !== "shopping") shoppingFrom = launching ? "launch" : settings.tab;
+      showTab("shopping");
+    }
+    // Copy as text: one button on every tab, always the whole list (Paints, Gear and Wishlist under their own headings).
+    function buildShopCopy(extraClass) {
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "primary-button layout-side shop-side-copy" + (extraClass ? " " + extraClass : "");
+      copy.style.width = "100%";
+      copy.style.marginTop = "12px";
+      copy.textContent = "Copy as text";
+      copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
+      return copy;
+    }
+    const shopHasAnything = () => shoppingItems().length > 0 || gearItems().length > 0 || wishes().length > 0;
+    function shopEmptyLine(text) {
+      const empty = document.createElement("p");
+      empty.className = "hint shop-empty";
+      empty.textContent = text;
+      return empty;
+    }
+
+    // The Paints tab: the old shopping list. FX4: the empty line says what fills it (Empty ones are offered under Suggested; example paints never go on it).
     function renderShopPanel() {
       const panel = document.getElementById("shop-panel");
       panel.replaceChildren();
       const items = shoppingItems();
-      const gear = gearItems();   // L1: Gear on the list, in its own section under the paints
-      const any = items.length > 0 || gear.length > 0;
+      const any = items.length > 0;
       const card = document.createElement("div");
       card.className = "card";
-      const title = document.createElement("h2");
-      title.textContent = "Shopping list";
-      title.style.fontSize = "1.125rem";   // UX1b: 18 px at normal text size
       // v81: from 900 px the shop bar and Copy as text sit in a side column and the brand lists in the main one (shop-split, layout-split).
-      // Written in the phone order, so under 900 px nothing moves. head = heading + More info.
+      // Written in the phone order, so under 900 px nothing moves. head = the More info.
       const head = document.createElement("div");
       head.className = "shop-head";
-      head.append(title);
       card.append(head);
-      if (!any) {
-        const empty = document.createElement("p");
-        empty.className = "hint";
-        empty.style.margin = "0 0 10px";
-        empty.textContent = "Nothing to buy. Paints you mark Wishlist appear here.";   // FX4: what fills the list (Empty ones are offered under Suggested; example paints never go on it)
-        card.append(empty);
-      } else {
-        // v52: the explanations sit behind one More info: what the list holds, the no-statuses warning, how the shop bar works.
-        const notes = [];
-        const sub = document.createElement("p");
-        sub.className = "hint";
-        sub.textContent = !gear.length ? `${plural(items.length, "paint")} to get.`
-          : !items.length ? `${plural(gear.length, "gear item")} to get.` : `${plural(items.length, "paint")} and ${plural(gear.length, "gear item")} to get.`;
-        notes.push(sub);
-        if (shopLinksOn() && items.length) {
-          const shops = document.createElement("p");
-          shops.className = "hint";
-          shops.textContent = SHOP_PLAIN_WORDS;
-          notes.push(shops);
-        }
-        const more = pageMoreInfo("shopping", notes, { name: "How the list works" });
+      if (!any) card.append(shopEmptyLine("Nothing to buy. Paints you mark Wishlist appear here."));
+      else if (shopLinksOn()) {
+        // v52: the explanation of how the shop bar works sits behind one More info
+        const shops = document.createElement("p");
+        shops.className = "hint";
+        shops.textContent = SHOP_PLAIN_WORDS;
+        const more = pageMoreInfo("shopping", [shops], { name: "How the list works" });
         more.classList.add("shop-more-info");
         head.append(more);
       }
       if (any) {
         card.classList.add("shop-split", "layout-split");
-        if (shopLinksOn() && items.length) {   // L1: the Buy these shop buttons stay paint-only
-          const bar = buildBuyBar(items);   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
+        if (shopLinksOn()) {
+          const bar = buildBuyBar(items);   // v19.1: shop links at the top (v39: unless Show shop links is off)
           bar.classList.add("shop-side-buy", "layout-side");
           card.appendChild(bar);
         }
@@ -3150,21 +3211,6 @@
             li.className = "shop-item";
             li.dataset.paint = i.paint.id;   // LQ1 (LQ5): so the row can be followed when the list is redrawn
             // A1: a tick box (44 px) that marks it bought, the name and where it came from, and Remove.
-            const tick = document.createElement("button");
-            tick.type = "button";
-            tick.className = "pick-tick shop-tick";
-            tick.setAttribute("role", "checkbox");
-            tick.setAttribute("aria-checked", "false");
-            const box = document.createElement("span");
-            box.className = "pick-box";
-            box.setAttribute("aria-hidden", "true");
-            tick.appendChild(box);
-            tick.addEventListener("click", () => {
-              if (li.classList.contains("shop-ticking")) return;
-              li.classList.add("shop-ticking");
-              tick.setAttribute("aria-checked", "true");
-              setTimeout(() => tickBought(i.paint.id), SHOP_TICK_PAUSE);
-            });
             const text = document.createElement("span");
             text.className = "shop-text";
             const nameEl = document.createElement("span");
@@ -3176,66 +3222,60 @@
               src.textContent = "from " + i.from.slice(0, 3).join(", ") + (i.from.length > 3 ? ` and ${i.from.length - 3} more` : "");
               text.appendChild(src);
             }
+            const tick = buildShopTick(li, nameEl, () => tickBought(i.paint.id));
             const remove = document.createElement("button");
             remove.type = "button";
             remove.className = "plain-button shop-remove";
             remove.textContent = "Remove";
             labelWithName(remove, "", nameEl);   // the button's name is "Remove" then the paint's name
             remove.addEventListener("click", () => removeFromShoppingList(i.paint.id));
-            labelWithName(tick, "", nameEl);   // the row's own name is the tick box's name
             li.append(tick, text, remove);
             list.appendChild(li);
           }
           lists.append(brandHead, list);
         }
-        if (gear.length) lists.append(...buildGearSection(gear));   // L1
-        const doneBox = buildBoughtSection();
+        const doneBox = buildBoughtSection("paints");
         if (doneBox) lists.appendChild(doneBox);
         const suggested = buildSuggestedSection();   // F1
         if (suggested) lists.appendChild(suggested);
-        const copy = document.createElement("button");
-        copy.className = "primary-button layout-side shop-side-copy";
-        copy.style.width = "100%";
-        copy.style.marginTop = "12px";
-        copy.textContent = "Copy as text";
-        copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
-        card.appendChild(copy);
-      }
-      if (!any) {
-        const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox);
+      } else {
+        const doneBox = buildBoughtSection("paints"); if (doneBox) card.appendChild(doneBox);
         const suggested = buildSuggestedSection(); if (suggested) card.appendChild(suggested);   // F1
       }
+      if (shopHasAnything()) card.appendChild(buildShopCopy());
       panel.appendChild(card);
     }
-    // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
-    // paint with Add back. Nothing here when nothing has been ticked.
-    // L1: the Gear section under the paints: a small heading like a brand's, then one row per item with the tick box, the name and
-    // where it came from, and Remove, built like a paint's row (the same classes, so it looks and wraps the same).
-    function buildGearSection(gear) {
-      const head = document.createElement("div");
-      head.className = "shop-brand shop-gear-head";
-      head.textContent = "Gear";
+    // The Bought tick box of a row (Paints and Gear): a 44 px checkbox that greys the row, then marks it bought after a short pause. SHP2: its name is the item's
+    // name (testers found the ticks had no name for a screen reader), so it reads "Pot name, checkbox, not checked".
+    function buildShopTick(li, nameEl, done) {
+      const tick = document.createElement("button");
+      tick.type = "button";
+      tick.className = "pick-tick shop-tick";
+      tick.setAttribute("role", "checkbox");
+      tick.setAttribute("aria-checked", "false");
+      const box = document.createElement("span");
+      box.className = "pick-box";
+      box.setAttribute("aria-hidden", "true");
+      tick.appendChild(box);
+      tick.addEventListener("click", () => {
+        if (li.classList.contains("shop-ticking")) return;
+        li.classList.add("shop-ticking");
+        tick.setAttribute("aria-checked", "true");
+        setTimeout(done, SHOP_TICK_PAUSE);
+      });
+      labelWithName(tick, "Bought", nameEl);   // "Bought" then the name
+      return tick;
+    }
+
+    // The Gear tab (L1: Gear on the list): one row per item with the tick box, the name and where it came from, and Remove, built like a paint's row
+    // (the same classes, so it looks and wraps the same). Bought Gear sits in a closed Bought section under it.
+    function buildGearList(gear) {
       const list = document.createElement("ul");
       list.className = "shop-list shop-gear-list";
       for (const g of gear) {
         const li = document.createElement("li");
         li.className = "shop-item shop-gear-item";
         li.dataset.gear = g.id;
-        const tick = document.createElement("button");
-        tick.type = "button";
-        tick.className = "pick-tick shop-tick";
-        tick.setAttribute("role", "checkbox");
-        tick.setAttribute("aria-checked", "false");
-        const box = document.createElement("span");
-        box.className = "pick-box";
-        box.setAttribute("aria-hidden", "true");
-        tick.appendChild(box);
-        tick.addEventListener("click", () => {
-          if (li.classList.contains("shop-ticking")) return;
-          li.classList.add("shop-ticking");
-          tick.setAttribute("aria-checked", "true");
-          setTimeout(() => tickGearBought(g.id), SHOP_TICK_PAUSE);
-        });
         const text = document.createElement("span");
         text.className = "shop-text";
         const nameEl = document.createElement("span");
@@ -3247,21 +3287,95 @@
           src.textContent = "from " + g.from;
           text.appendChild(src);
         }
+        const tick = buildShopTick(li, nameEl, () => tickGearBought(g.id));
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "plain-button shop-remove";
         remove.textContent = "Remove";
         labelWithName(remove, "", nameEl);
         remove.addEventListener("click", () => removeGear(g.id));
-        labelWithName(tick, "", nameEl);
         li.append(tick, text, remove);
         list.appendChild(li);
       }
-      return [head, list];
+      return list;
     }
-    function buildBoughtSection() {
-      const done = boughtItems();
-      const doneGear = gearBought();   // L1: ticked Gear sits here too, after the paints
+    function renderShopGear() {
+      const panel = document.getElementById("shop-gear-panel");
+      panel.replaceChildren();
+      const gear = gearItems();
+      const card = document.createElement("div");
+      card.className = "card";
+      if (!gear.length) card.append(shopEmptyLine("Nothing to buy. Gear you add from Guides appears here."));
+      else card.append(buildGearList(gear));
+      const doneBox = buildBoughtSection("gear");
+      if (doneBox) card.appendChild(doneBox);
+      if (shopHasAnything()) card.appendChild(buildShopCopy());
+      panel.appendChild(card);
+    }
+
+    // The Wishlist tab: the Models Wishlist, read only. A tap on a row opens that model in Models (where it is edited); Got it is the Models Got it,
+    // with the same Undo. It reads wishes() every time it is drawn, so it can never differ from the Models list.
+    function openWishInModels(wish) {
+      showTab("units");
+      setModelsView("wishes");
+      const now = wishes().find(w => w.id === wish.id);
+      if (now) openWishForm(now);
+    }
+    function buildShopWishRow(w) {
+      const li = document.createElement("li");
+      li.className = "wish-row";
+      li.dataset.wishId = String(w.id);
+      const info = document.createElement("button");
+      info.type = "button"; info.className = "wish-info";
+      info.setAttribute("aria-label", `Open ${w.name} in Models`);
+      const name = document.createElement("span");
+      name.className = "wish-name"; name.textContent = w.name;
+      const sub = document.createElement("span");
+      sub.className = "wish-sub"; sub.textContent = plural(w.count, "model");
+      info.append(name, sub);
+      const oneLine = String(w.note || "").replace(/\s+/g, " ").trim();
+      if (oneLine) {
+        const note = document.createElement("span");
+        note.className = "wish-note";
+        note.textContent = oneLine.length > WISH_NOTE_SHOWN ? oneLine.slice(0, WISH_NOTE_SHOWN).trimEnd() + "…" : oneLine;
+        info.appendChild(note);
+      }
+      info.addEventListener("click", () => openWishInModels(w));
+      const got = document.createElement("button");
+      got.type = "button"; got.className = "plain-button wish-got"; got.textContent = "Got it";
+      got.setAttribute("aria-label", `Got it, ${w.name}`);
+      got.addEventListener("click", () => {
+        const at = [...document.querySelectorAll("#shop-wish-panel .wish-row")].indexOf(li);
+        gotIt(w);   // the Models Got it: it redraws this tab (render), says "moved to Models" and offers Undo
+        const next = document.querySelectorAll("#shop-wish-panel .wish-got")[Math.max(0, at)] || document.querySelector('#shop-seg [data-stab="wishlist"]');
+        if (next) next.focus();
+      });
+      li.append(info, got);
+      return li;
+    }
+    function renderShopWish() {
+      const panel = document.getElementById("shop-wish-panel");
+      panel.replaceChildren();
+      const all = wishes();
+      const card = document.createElement("div");
+      card.className = "card";
+      if (!all.length) card.append(shopEmptyLine("Nothing on your Wishlist yet."));
+      else {
+        const list = document.createElement("ul");
+        list.className = "wish-units shop-wish-list";
+        const nameKey = (w) => w.name.replace(/^the\s+/i, "");
+        for (const w of all.slice().sort((a, b) => sortCollator.compare(nameKey(a), nameKey(b)) || a.id - b.id)) list.appendChild(buildShopWishRow(w));
+        card.append(list);
+      }
+      if (shopHasAnything()) card.appendChild(buildShopCopy());
+      panel.appendChild(card);
+    }
+    // A1: the Bought section at the bottom of a tab: closed to start with, named with its count. Open, it has Clear bought and each item with
+    // Add back. Nothing here when nothing has been ticked. kind: "paints" or "gear" (SHP2: each tab has its own).
+    function buildBoughtSection(kind) {
+      const gearTab = kind === "gear";
+      const done = gearTab ? [] : boughtItems();
+      const doneGear = gearTab ? gearBought() : [];
       if (!done.length && !doneGear.length) return null;
       const box = document.createElement("div");
       box.className = "shop-bought";
@@ -3278,7 +3392,7 @@
       clear.type = "button";
       clear.className = "plain-button shop-bought-clear";
       clear.textContent = "Clear bought";
-      clear.addEventListener("click", clearBought);
+      clear.addEventListener("click", () => clearBought(kind));
       const list = document.createElement("ul");
       list.className = "shop-list shop-bought-list";
       for (const x of done) {
@@ -3318,17 +3432,15 @@
       return box;
     }
 
-    // v40: the small basket count on the tab bar. Shows how many paints are on the list (hidden at none) and, when tapped, takes you
-    // to the Shopping list tab from anywhere. It will not interrupt an open Paste recipes page or a scheme being edited.
-    const basketButton = document.getElementById("basket-button");
-    // The picture is a little drawn basket (built with createElementNS, no HTML text) and the number beside it. When the count changes the
+    // v40, SHP2: the Shopping button in the header: the little drawn basket (built with createElementNS, no HTML text), the word Shopping and, when the list
+    // holds paints or Gear, the count in a badge (Wishlist models are not counted: the Wishlist tab shows its own). Shown on every screen. It opens the
+    // Shopping screen from anywhere, but will not interrupt an open Paste recipes page or a scheme being edited. When the count changes the
     // pill gives one small pop (skipped for people who ask their phone for less motion).
+    const basketButton = document.getElementById("basket-button");
     let basketShown = -1;
     function updateBasket() {
       const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
       const n = paintsN + gearN;
-      // FX1: on the Painting pages (the entry and every sub-page) the basket always shows, so Shopping is easy to find; an empty list shows no number.
-      basketButton.classList.toggle("hidden", n === 0 && settings.tab !== "recipes");
       if (n !== basketShown) {
         const NS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(NS, "svg");
@@ -3342,12 +3454,15 @@
         path.setAttribute("stroke-linecap", "round");
         path.setAttribute("stroke-linejoin", "round");
         svg.appendChild(path);
+        const label = document.createElement("span");
+        label.className = "basket-label";
+        label.textContent = "Shopping";
         if (n > 0) {
           const num = document.createElement("span");
           num.className = "basket-count";
           num.textContent = n > 99 ? "99+" : String(n);
-          basketButton.replaceChildren(svg, num);
-        } else basketButton.replaceChildren(svg);
+          basketButton.replaceChildren(svg, label, num);
+        } else basketButton.replaceChildren(svg, label);
         if (basketShown > -1 && n > 0) {
           basketButton.classList.remove("pop");
           void basketButton.offsetWidth;   // lets the pop play again
@@ -3355,18 +3470,16 @@
         }
         basketShown = n;
       }
-      basketButton.setAttribute("aria-label", n === 0 ? "Shopping list, empty. Tap to open it."
-        : `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
+      basketButton.setAttribute("aria-label", n === 0 ? "Shopping, empty"
+        : `Shopping, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}`);
     }
     basketButton.addEventListener("click", () => {
-      if (importDraft) { showToast("Close Paste recipes first, then tap the basket."); return; }
-      if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then tap the basket."); return; }
+      if (importDraft) { showToast("Close Paste recipes first, then tap Shopping."); return; }
+      if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then tap Shopping."); return; }
       whenOkToLeaveDraft(() => {
         recipeDraft = null;
         openRecipeId = null;
-        settings.recipeView = "shopping";
-        renderRecipes();
-        showTab("recipes");
+        openShopping();
       });
     });
 
@@ -4491,6 +4604,7 @@
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
+      shopping: document.getElementById("view-shopping"),   // SHP2: Shopping is a screen of its own (it was a tab inside Painting)
       about: document.getElementById("view-about"),   // AM1: About and Mission, the first page of Tools and Settings
       guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Tools and Settings
       settings: document.getElementById("view-settings"),
@@ -4873,8 +4987,12 @@
       endLaunchMove();   // (the tap itself goes where it always did: the bar's pieces were not tappable during the travel, so it never opens a section by accident)
     }, true);
     document.getElementById("home-button").addEventListener("click", goToStartPage);
-    document.getElementById("back-menu").addEventListener("click", (event) => {
+    const backMenu = document.getElementById("back-menu");
+    backMenu.addEventListener("click", (event) => {
       const wasFocused = document.activeElement === event.currentTarget;
+      // SHP2: on Shopping the arrow returns to the screen the Shopping button was tapped on (the start page if it was tapped there); opened any other way
+      // (the address #shopping, a reload) it goes to the start page like every other screen.
+      if (!launching && !travelling && settings.tab === "shopping" && shoppingFrom && shoppingFrom !== "launch") { showTab(shoppingFrom); if (wasFocused) document.getElementById("home-button").focus({ focusVisible: false }); return; }
       goToStartPage();
       if (wasFocused) document.getElementById("home-button").focus({ focusVisible: false });   // the arrow hides, so focus moves to the title button (where it stays after the title is tapped)
     });
@@ -4913,7 +5031,9 @@
       anims[anims.length - 1].onfinish = () => { if (moveEnd === done) endMove(); };
     }
     const BAR_ORDER = ["dashboard", "units", "recipes", "guides"];   // the menu bar's order: later = slide left, earlier = slide right
-    const barOf = (name) => (MORE_PAGES.includes(name) ? "guides" : name);   // the bar segment a page belongs to (Settings, Help and Updates are in the fourth)
+    // SHP2: Shopping lights the Painting piece (it used to be a Painting tab, so every bar lookup, slide direction and lit-piece move already works for it; a fifth
+    // piece, or none lit, would have needed new cases in the travel code). The bar stays four pieces.
+    const barOf = (name) => (MORE_PAGES.includes(name) ? "guides" : name === "shopping" ? "recipes" : name);   // the bar segment a page belongs to (Settings, Help and Updates are in the fourth)
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
     // MO6: WORDS AND THE PAGE LEAVE SMOOTHLY WITH THE TRAVEL. The start page's line, the version number and the page under the bar used to appear or go
@@ -5206,6 +5326,7 @@
       const toCredits = name === "credits";   // FB3
       name = tabAlias(name);
       if (name !== "updates") versionFrom = null;
+      if (name !== "shopping") shoppingFrom = null;   // SHP2: any other move clears where Shopping was opened from
       if (name === "settings" && tabAlias(settings.tab) !== "settings") { const fold = cardFolds.get("appearance-themes"); if (fold) fold(false); }   // DC1: Appearance and Themes starts folded each time Settings opens (nothing saved)
       if (!hasOwn(views, name)) name = "dashboard";
       const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
@@ -5250,6 +5371,8 @@
       saveSettings();
       updateBasket();   // FX1: the basket shows on Painting even when empty, so it follows the tab
       if (name === "settings") renderSettings();
+      if (name === "shopping") renderShopping();   // SHP2: built fresh each time it opens, from the list and the Wishlist as they are now
+      backMenu.setAttribute("aria-label", name === "shopping" && shoppingFrom ? "Back" : "Back to menu");   // SHP2: on Shopping the arrow returns to where you came from
       if (name === "about") { closeCreditsFolds(); renderThanks(); }   // CR1, FB3: the Thanks section is part of About now
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
       if (name === "dashboard") renderPaletteTile();   // X4: the palette may have changed since the Dashboard was last drawn
@@ -6194,7 +6317,7 @@
     // (goToUnit, openRecipe, Mentor's links, the Back button) goes through showTab, so it is drawn first. A few small things
     // outside one section stay up to date on every redraw: the basket count on the menu bar and the game and faction suggestions.
     const staleTabs = new Set();
-    const DRAWN_TABS = ["dashboard", "units", "recipes", "settings"];
+    const DRAWN_TABS = ["dashboard", "units", "recipes", "settings", "shopping"];   // SHP2: Shopping too, so it follows every change while it is open
     function shownTab() {
       for (const [key, view] of Object.entries(views)) if (!view.classList.contains("hidden")) return key;
       return tabAlias(settings.tab);
@@ -6207,6 +6330,7 @@
       } else if (name === "units") renderUnits();
       else if (name === "recipes") renderRecipes();
       else if (name === "settings") renderRecipePrefs();   // RS2
+      else if (name === "shopping") renderShopping();   // SHP2
     }
     // Draws a section now if it changed while it was out of sight. Returns nothing; safe to call for any name.
     function drawIfStale(name) { if (staleTabs.has(name)) drawTab(name); }
@@ -11355,7 +11479,6 @@
     let openRecipeId = null;   // the recipe being read, or null for the list
     let recipeDraft = null;    // the recipe being edited (a copy), or null
     const schemeView = document.getElementById("scheme-view");
-    const shoppingView = document.getElementById("shopping-view");   // v40
     const labView = document.getElementById("colourlab-view");   // X1
     let schemeDraft = null;    // the painting scheme being edited (a copy), or null
 
@@ -11367,29 +11490,28 @@
       importPage.classList.toggle("hidden", !importDraft);
       if (importDraft) {
         fillDraftCard("recipe", false); fillDraftCard("paste", false);   // v26
-        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, shoppingView, labView, recipePage]) el.classList.add("hidden");
+        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, labView, recipePage]) el.classList.add("hidden");
         renderImport();
         return;
       }
       const onPage = !!recipeDraft || openRecipeId !== null;
       const onPalette = !onPage && settings.recipeView === "palette";
       const onSchemes = !onPage && settings.recipeView === "schemes";
-      const onShopping = !onPage && settings.recipeView === "shopping";   // v40
       const onLab = !onPage && settings.recipeView === "colourlab";   // X1
-      const current = onPalette ? "palette" : onSchemes ? "schemes" : onShopping ? "shopping" : onLab ? "colourlab" : "recipes";
+      const current = onPalette ? "palette" : onSchemes ? "schemes" : onLab ? "colourlab" : "recipes";
       // The switch hides while a recipe or a scheme being edited fills the screen.
       recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
       fillDraftCard("recipe", !onPage && !(onSchemes && !!schemeDraft));    // v26: kept unfinished work
       fillDraftCard("paste", !onPage && !(onSchemes && !!schemeDraft));
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
       // v78: from 900 px an open recipe (or one being written) shows beside the list, but only when it was opened from the Recipes list.
-      const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "shopping", "colourlab"].includes(settings.recipeView);
+      const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "colourlab"].includes(settings.recipeView);
       // Mo3a: a recipe opening or closing from the Recipes list, by a tap. On a phone the list steps back and the detail slides in from the
-      // right (closing reverses it); from 900 px, where the detail sits in the side pane, it is a short fade. Not from Palette, Schemes or Shopping.
+      // right (closing reverses it); from 900 px, where the detail sits in the side pane, it is a short fade. Not from Palette, Schemes or Colour Lab.
       let detailMove = null, closeSnap = null;   // LQ1 (LQ2): closeSnap
       const wasPage = !recipePage.classList.contains("hidden");
       if (onPage !== wasPage && canMove() && settings.tab === "recipes" && !launching && !views.recipes.classList.contains("hidden")
-          && !["palette", "schemes", "shopping", "colourlab"].includes(settings.recipeView)) {
+          && !["palette", "schemes", "colourlab"].includes(settings.recipeView)) {
         const ms = motionMs("--motion-med");
         const sideways = [{ transform: "none", opacity: 1 }, { transform: "translateX(-20%)", opacity: 0.45 }];
         if (recipeWide.matches) {
@@ -11404,8 +11526,7 @@
         }
       }
       recipeSplit.classList.toggle("layout-split", wideSplit);
-      recipeHome.classList.toggle("hidden", (onPage && !wideSplit) || onPalette || onSchemes || onShopping || onLab);
-      shoppingView.classList.toggle("hidden", !onShopping);
+      recipeHome.classList.toggle("hidden", (onPage && !wideSplit) || onPalette || onSchemes || onLab);
       labView.classList.toggle("hidden", !onLab);
       paletteView.classList.toggle("hidden", !onPalette);
       schemeView.classList.toggle("hidden", !onSchemes);
@@ -11414,7 +11535,6 @@
       else if (openRecipeId !== null) renderRecipeView(recipeById(openRecipeId));
       else if (onPalette) renderPalette();
       else if (onSchemes) renderSchemes();
-      else if (onShopping) renderShopPanel();
       else if (onLab) renderColourLab();
       else renderRecipeList();
       if (wideSplit) renderRecipeList();
@@ -11448,7 +11568,7 @@
       settings.recipeView = b.dataset.view;
       saveSettings();
       renderRecipes();
-      if (was !== b.dataset.view) lqFadeIn({ schemes: schemeView, colourlab: labView, palette: paletteView, shopping: shoppingView }[b.dataset.view] || recipeSplit);
+      if (was !== b.dataset.view) lqFadeIn({ schemes: schemeView, colourlab: labView, palette: paletteView }[b.dataset.view] || recipeSplit);
     }));
 
     // Leaving the editor with unsaved changes? Check first. v21.7: it can't answer instantly
@@ -23257,12 +23377,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=167".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=168".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v167";
+    const APP_VERSION = "v168";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23714,21 +23834,28 @@
     // "Shop links" fold-outs (with Add to shopping list) under suggested paints. Your shopping list itself stays. The choice is
     // settings.hideShopLinks: only an explicit true means hidden (saved settings, so DATA_VERSION stays 1). Like the visit counter
     // it is not in backups (a backup holds your units, recipes and stages, never settings like this one).
+    // SHP2: the same switch is also at the top of the Shopping screen (#shop-links-switch). Both boxes read and write settings.hideShopLinks, so they always agree.
     const shopLinksBox = document.getElementById("show-shop-links");
+    const shopLinksSwitch = document.getElementById("shop-links-switch");
     function showShopLinksChoice() {
       shopLinksBox.checked = shopLinksOn();
+      shopLinksSwitch.checked = shopLinksOn();
     }
-    shopLinksBox.addEventListener("change", () => {
-      settings.hideShopLinks = !shopLinksBox.checked;
+    for (const box of [shopLinksBox, shopLinksSwitch]) box.addEventListener("change", () => {
+      settings.hideShopLinks = !box.checked;
       saveSettings();
       showShopLinksChoice();
-      render();                                  // redraws the lists that carry shop links (and the Shopping list tab when it is open)
+      render();                                  // redraws the lists that carry shop links (and the Shopping screen when it is open)
       for (const card of document.querySelectorAll("details.colour-ideas")) if (card.refresh) card.refresh();
     });
     if (settings.hideShopLinks !== undefined && typeof settings.hideShopLinks !== "boolean") delete settings.hideShopLinks;
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v168", date: "15 Nov 2026", changes: [
+        "Shopping is now a screen of its own, with a Shopping button at the top of every screen. Inside are Paints, Gear and Wishlist, with a Show shop links switch at the top.",
+        "Fixes and tidying.",
+      ] },
       { version: "v167", date: "15 Nov 2026", changes: [
         "The models list is now called Wishlist, the same word as the paint status, and the Really want tick is gone. Stages now rolls down inside the top card on Nexus.",
         "Fixes and tidying.",
@@ -24299,6 +24426,7 @@
     applyPalette(settings.palette);
     seedExampleRecipes();   // v24: only on a brand-new start
     planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
+    if (settings.recipeView === "shopping") settings.recipeView = "recipes";   // SHP2: Shopping is not a Painting tab any more; an older saved choice opens the Recipes list
     foldPageText();   // v52
     addRecipeSchemeExplainers();   // S1
     markHelpFolds();   // v52
@@ -24466,6 +24594,7 @@
       if (tab === "units" && filtersSheet) return closeFiltersSheet;   // SF3: the Filters sheet
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
+      if (tab === "shopping" && shoppingFrom) { const from = shoppingFrom; return from === "launch" ? enterLaunch : () => showTab(from); }   // SHP2: opened from the Shopping button: Back returns to where the person was
       if (tab === "updates" && versionFrom) { const from = versionFrom; return from === "launch" ? enterLaunch : () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was
       if (tab && tab !== "dashboard") return () => showTab("dashboard");
       return null;

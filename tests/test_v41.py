@@ -46,7 +46,7 @@ P, at = h.P, h.at
 BASE = "test paints|probe blue"
 
 def count_text(page):
-    return page.evaluate("() => { const b = document.getElementById('basket-button'); return b.classList.contains('hidden') ? '' : b.textContent.trim(); }")
+    return page.evaluate("() => { const b = document.getElementById('basket-button'); const n = b.querySelector('.basket-count'); return n ? n.textContent.trim() : ''; }   /* SHP2: the count is the badge; the button always shows and holds the word Shopping too */")
 
 def source_of(page, name):
     return next((p.get("shopFrom") for p in h.stored_paints(page) if p["name"] == name), "missing")
@@ -119,7 +119,7 @@ def main():
         check("Add in the wheel's matching colours (Blue) records Compendium: Colour wheel, Blue on the one paint", source_of(page, first) == [WHEEL_SRC + "Blue"], source_of(page, first))
         page.click('nav button[data-tab="recipes"]')
         page.wait_for_timeout(200)
-        page.click('#recipe-seg [data-view="shopping"]')
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(150)
         text = page.inner_text("#shop-panel")
         check("the Shopping list shows that paint once, saying from Compendium: Colour wheel, Blue", text.count(first) == 1 and "from " + WHEEL_SRC + "Blue" in text, text[:200])

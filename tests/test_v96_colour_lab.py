@@ -47,7 +47,7 @@ def main():
         print("\n--- 1. Sub-tabs ---")
         t.fresh(page)
         t.main_tab(page, "recipes")
-        check("Painting sub-tabs in order", labels(page, "#recipe-seg button") == ["Recipes", "Schemes", "Colour Lab", "Your Palette", "Shopping"], labels(page, "#recipe-seg button"))
+        check("Painting sub-tabs in order", labels(page, "#recipe-seg button") == ["Recipes", "Schemes", "Colour Lab", "Your Palette"], labels(page, "#recipe-seg button"))
         t.recipe_view(page, "colourlab")
         check("Colour Lab sections in order", labels(page, "#lab-seg button") == ["Wheel", "Colour ideas", "Colour plans", "Colours you've used", "Paint Picker"], labels(page, "#lab-seg button"))
         check("Wheel is open first, the only one selected", page.evaluate("() => [...document.querySelectorAll('#lab-seg button')].map(b => b.getAttribute('aria-selected')).join()") == "true,false,false,false,false"
@@ -90,7 +90,7 @@ def main():
         check("Back goes to Your Palette with the paint still open", page.evaluate("() => settings.recipeView") == "palette" and page.locator("[data-ideas-for]").count() == 1)
 
         print("\n--- 4. Shopping sources ---")
-        t.existing(page, [], book_with_old_source(), {"tab": "recipes", "recipeView": "shopping"})
+        t.existing(page, [], book_with_old_source(), {"tab": "shopping"})   # SHP2: Shopping is a screen of its own
         page.wait_for_selector(".shop-from")
         shown = page.inner_text("#shop-panel")
         stored = page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-recipes')).paints[0].shopFrom")

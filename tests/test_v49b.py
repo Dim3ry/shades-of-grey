@@ -112,7 +112,10 @@ MAKE_ROW = """(pressed) => { let r = document.getElementById('t-stage-row');
 
 def seg(page, view):
     tab(page, "recipes")
-    page.click(f'#recipe-seg button[data-view="{view}"]')
+    if view == "shopping":   # SHP2: Shopping is a screen of its own now; the header Shopping button opens it
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
+    else:
+        page.click(f'#recipe-seg button[data-view="{view}"]')
     settle(page)
 
 def judge(tag, where, rows, seen):

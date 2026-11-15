@@ -144,7 +144,7 @@ def open_shopping(page):
     page.click('nav button[data-tab="recipes"]')
     quiet(page)
     # v40: the shopping list is its own switch on the Recipes tab (it used to fold out under Your Palette)
-    page.click('#recipe-seg [data-view="shopping"]')
+    page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
     quiet(page)
 
 def main():
@@ -311,7 +311,7 @@ def main():
         quiet(page)
         listed = page.evaluate("(n) => [...document.querySelectorAll('#paint-list li')].some(li => li.textContent.includes(n))", first["name"])
         check("the Your Palette list is already up to date when you go there (nothing to refresh by hand)", listed, first["name"])
-        page.click('#recipe-seg [data-view="shopping"]')   # v40: its own switch now
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")   # v40: its own switch now
         quiet(page)
         shopping = page.inner_text("#shop-panel")
         check("the shopping list shows it, and the Buy these bar offers it", first["name"] in shopping and "Buy these" in shopping, shopping[:200])

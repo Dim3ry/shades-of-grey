@@ -213,7 +213,7 @@ def main():
         check("the palette search's answer box changes height smoothly", any("height" in a for a in hs), hs)
         page.fill("#palette-search", "")
         page.wait_for_timeout(400)
-        page.evaluate("() => document.querySelector('#recipe-seg button[data-view=shopping]').click()")
+        page.evaluate("() => document.getElementById('basket-button').click()")   # SHP2: Shopping is opened by the header button
         page.wait_for_timeout(550)
         n0 = page.evaluate("() => document.querySelectorAll('#shop-panel .shop-item').length")
         page.evaluate("() => document.querySelector('#shop-panel .shop-remove').click()")
@@ -271,7 +271,7 @@ def main():
         page.evaluate("showTab('recipes')")
         page.wait_for_timeout(300)
         steps = [("the Painting switch", lambda: page.click("#recipe-seg button[data-view=schemes]")),
-                 ("a shopping row leaving", lambda: (page.click("#recipe-seg button[data-view=shopping]"), page.wait_for_timeout(200),
+                 ("a shopping row leaving", lambda: (page.click("#basket-button"), page.wait_for_function("() => settings.tab === 'shopping'"), page.wait_for_timeout(200),
                                                      page.evaluate("document.querySelector('#shop-panel .shop-remove').click()"))),
                  ("open Filters", lambda: (page.evaluate("showTab('units')"), page.wait_for_timeout(200), page.click("#toggle-filters"))),
                  ("the Undo message leaving", lambda: (page.keyboard.press("Escape"), page.evaluate("showToast('x', () => {})"), page.click("#toast-undo"))),

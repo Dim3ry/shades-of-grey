@@ -52,8 +52,7 @@ def main():
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
-        load(page, paints=PAINTS, recipes=RECIPES, settings={"recipeView": "shopping"})
-        page.click('nav button[data-tab="recipes"]')
+        load(page, paints=PAINTS, recipes=RECIPES, settings={"tab": "shopping"})   # SHP2: Shopping is a screen of its own; loading with it saved opens it (launch_helpers.leave_launch)
 
         print("\n--- 1. Shopping under 900 px: one column in the old order ---")
         for scheme in ("dark", "light"):

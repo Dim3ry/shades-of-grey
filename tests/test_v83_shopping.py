@@ -29,12 +29,11 @@ def P(i, name, **more):
 WISH = {"status": "wishlist", "shopFrom": ["Recipe: Blue"]}
 PAINTS = [P(1, "Alpha Blue", **WISH), P(2, "Beta Red", **WISH), P(3, "Gamma Green", **WISH), P(4, "Delta Owned", status="owned"),
           P(5, "Epsilon Plain")]
-SETTINGS = {"tab": "recipes", "recipeView": "shopping", "examplesChecked": True}
+SETTINGS = {"tab": "shopping", "examplesChecked": True}
 PAUSE = 1100   # the grey pause (700 ms) plus a margin
 
 def open_shop(page):
-    page.evaluate("() => { settings.recipeView = 'shopping'; renderRecipes(); }")
-    page.click('nav button[data-tab="recipes"]')
+    page.evaluate("() => openShopping()")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
     page.wait_for_timeout(250)
 
 def names(page):
@@ -76,7 +75,7 @@ def main():
             page.wait_for_timeout(150)
             check(f"Remove takes {name} off the list and says so", name not in names(page) and "Removed" in page.inner_text("#toast"))
         check("a removed paint is Not owned, and the basket count follows", status(page, 1) == "notowned"
-              and page.inner_text("#basket-button").strip() == "2", page.inner_text("#basket-button"))
+              and page.inner_text("#basket-button .basket-count").strip() == "2", page.inner_text("#basket-button"))   # SHP2: the count is the badge
         page.click("#toast-undo")
         page.wait_for_timeout(150)
         check("Undo puts back only that paint, with where it came from",
