@@ -99,7 +99,7 @@ def main():
         idle = page.locator("#recipe-page .shop-idle-button")
         check("an example recipe has the same button, greyed out", idle.count() == 1 and idle.inner_text() == "Add to shopping list"
               and idle.get_attribute("aria-disabled") == "true")
-        check("with one short line saying why", "made up" in page.inner_text("#recipe-page .shop-idle .hint"), page.inner_text("#recipe-page .shop-idle .hint"))
+        check("with one short line saying why", "Example paint" in page.inner_text("#recipe-page .shop-idle .hint"), page.inner_text("#recipe-page .shop-idle .hint"))   # SHP3: the line is now "Example paint. Add your own paint first." (testers did not understand "made up")
         idle.dispatch_event("click")
         page.wait_for_timeout(150)
         check("tapping it adds nothing", page.evaluate("shoppingItems().length") == 0)

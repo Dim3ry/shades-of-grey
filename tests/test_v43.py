@@ -464,7 +464,7 @@ def main():
         h.tap(page, "orange")
         # v73 (chunk 4.3): buildShopFoldout is left out of this list, because it gained one option (the Mentor rows have their own Add button).
         check("the shopping-list code was not touched (addToShoppingList, noteShopSource, shopListTag, watchShopTag and the shop table are not in the diff)",
-              not any(re.search(r"function (addToShoppingList|noteShopSource|shopListTag|watchShopTag|onShoppingList|updateShopFoldouts)|const SHOPS", l) for l in added))
+              not any(re.search(r"function (addToShoppingList|noteShopSource|shopListTag|watchShopTag|onShoppingList|updateShopFoldouts)|const SHOPS", l) for l in added if "runningLow" not in l))   # SHP3: addToShoppingList gained a third argument, runningLow, for Suggested (one line, its name is the only change)
 
         # ---------- 10. Screen reader ----------
         print("\n--- 10. Screen reader ---")

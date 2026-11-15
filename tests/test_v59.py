@@ -79,7 +79,7 @@ def main():
         e.recipe_view(page, "palette")
         check("Your Palette: 'Nothing in the paint rack yet.'", page.inner_text("#paint-list").strip() == "Nothing in the paint rack yet.", page.inner_text("#paint-list"))
         e.recipe_view(page, "shopping")
-        check("Shopping: 'Nothing to buy.'", "Nothing to buy." in page.inner_text("#view-shopping"))   # SHP2: Shopping is its own screen (#view-shopping), not part of #view-recipes
+        check("Shopping: the empty line says what fills it", "appear here." in page.inner_text("#view-shopping"))   # SHP3: the empty line now says what fills the tab ("Paints you add or mark Wishlist appear here."), no longer "Nothing to buy";    # SHP2: Shopping is its own screen (#view-shopping), not part of #view-recipes
 
         # ---------- 4. The newer cards ----------
         print("\n--- 4. The v56 to v58 cards still work ---")
