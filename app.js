@@ -19883,10 +19883,11 @@
     // ocr/README.md), not downloaded from other websites on the first scan. So scanning works
     // offline from the start, and nothing goes to an outside website. ocr/ocr-worker.js runs
     // the engine in the background; this little "client" sends it pictures and gets text back.
-    const OCR_WORKER_URL = "ocr/ocr-worker.js";
+    // UP1: carries the version like the other scripts (?v=), so an old page never loads a newer worker. sw.js saves it under the same address.
+    const ocrWorkerUrl = () => "ocr/ocr-worker.js?v=" + APP_VERSION.slice(1);   // (a function: APP_VERSION is declared further down the file)
     let ocrWorker = null;
     function startOcrWorker() {
-      const worker = new Worker(OCR_WORKER_URL);
+      const worker = new Worker(ocrWorkerUrl());
       const waiting = new Map();
       let nextId = 1;
       const failAll = (message) => {
@@ -24497,5 +24498,33 @@
     // "if" checks the browser supports it first, so older browsers just skip this.
     // It only works from a web address (https://...), not from a file opened on your PC.
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      // UP1: a new version taking over while the app is open gets one "New version ready" bar with Reload. Only when a helper
+      // already ran this page (so never on the very first install), only once, and the page is never reloaded by itself.
+      let hadHelper = !!navigator.serviceWorker.controller;   // (on the very first install the helper takes over once, silently: that sets this)
+      let readyBarShown = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!hadHelper) { hadHelper = true; return; }
+        if (readyBarShown) return;
+        readyBarShown = true;
+        const bar = document.createElement("div");
+        bar.className = "up1-bar";
+        bar.setAttribute("role", "status");
+        const words = document.createElement("span");
+        words.textContent = "New version ready";
+        const reload = document.createElement("button");
+        reload.type = "button";
+        reload.id = "up1-reload";
+        reload.textContent = "Reload";
+        reload.addEventListener("click", () => location.reload());
+        const close = document.createElement("button");
+        close.type = "button";
+        close.id = "up1-dismiss";
+        close.className = "up1-close";
+        close.setAttribute("aria-label", "Dismiss");
+        close.textContent = "×";
+        close.addEventListener("click", () => bar.remove());
+        bar.append(words, reload, close);
+        document.body.appendChild(bar);
+      });
       navigator.serviceWorker.register("sw.js").catch(() => {});
     }

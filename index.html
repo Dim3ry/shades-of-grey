@@ -1048,6 +1048,10 @@
     .toast span { min-width: 0; overflow-wrap: anywhere; }
     /* v20: in light mode the toast is dark, so a faint outline keeps it clear over the (always dark) photo viewer. */
     :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px var(--toast-ring), 0 4px 14px var(--shadow); }
+    /* UP1: the "New version ready" bar (made by app.js when a new version takes over while the app is open) */
+    .up1-bar { position: fixed; left: 12px; right: 12px; top: calc(12px + env(safe-area-inset-top)); z-index: 60; display: flex; align-items: center; gap: 4px; max-width: 480px; margin: 0 auto; padding: 4px 4px 4px 14px; border-radius: var(--radius-box); background: var(--text); color: var(--background); box-shadow: 0 0 0 1px var(--toast-ring), 0 4px 14px var(--shadow); }
+    .up1-bar span { flex: 1; min-width: 0; }
+    .up1-bar button { min-height: 44px; min-width: 44px; padding: 0 12px; background: none; color: var(--toast-action); font-weight: 700; }
     .toast button { margin-left: auto; background: none; color: var(--toast-action); font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
 
     /* v21.8: while a text box has the cursor (app.js puts the class "typing" on <body>), the
