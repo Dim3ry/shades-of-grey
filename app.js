@@ -2597,7 +2597,7 @@
       body.className = "where-buy-body";
       const list = document.createElement("ul");
       list.className = "where-buy-list";
-      const shops = shopLinksOn() ? shopsFor([{ paint: { name: types[0], brand: "" } }]).map(x => x.shop) : [];   // the shops that sell every brand
+      const shops = shopLinksOn() ? shopsFor([{ paint: { name: types[0], brand: "" } }]).map(x => x.shop) : [];   // the shops that sell every brand (SHP4: the ticked ones)
       const slots = [];
       for (const type of types) {
         const li = document.createElement("li");
@@ -2652,11 +2652,14 @@
         list.appendChild(li);
       }
       body.appendChild(list);
+      if (shopLinksOn() && noShopsTicked()) body.appendChild(buildNoShops());   // SHP4
       if (shops.length) {
         const note = document.createElement("p");
         note.className = "hint";
         note.textContent = gearPlainWords();
         body.appendChild(note);
+        const ad = buildAdLine();   // SHP4: only with a tracking code
+        if (ad) body.appendChild(ad);
       }
       box.redrawAdd = () => slots.forEach(s => s.redrawAdd());   // updateShopFoldouts: the buttons follow the list (after Add, Remove and Undo)
       box.append(summary, body);
@@ -2822,8 +2825,68 @@
     }
     // The shops that sell at least one paint on the list, each with the paints it sells.
     function shopsFor(items) {
-      return SHOPS.map(shop => ({ shop, paints: items.map(i => i.paint).filter(p => shopSells(shop, p.brand)) }))
+      return SHOPS.filter(shopChosen).map(shop => ({ shop, paints: items.map(i => i.paint).filter(p => shopSells(shop, p.brand)) }))
         .filter(x => x.paints.length);
+    }
+    // ----- SHP4: My shops, the Ad line and the Find buttons -----
+    // settings.hideShops: the ids of the shops that are UNticked (so every shop is ticked until you untick it, and a shop added later is ticked too).
+    // Saved settings like the Shop links switch, so not in backups and DATA_VERSION stays. shopsFor only returns ticked shops, so every bar,
+    // Where to buy row, fold-out and Find button follows the choice.
+    function shopChosen(shop) { return !(Array.isArray(settings.hideShops) && settings.hideShops.includes(shop.id)); }
+    function noShopsTicked() { return !SHOPS.some(shopChosen); }
+    // The one line (and button) shown where shop links would be when every shop is unticked.
+    function buildNoShops() {
+      const box = document.createElement("div");
+      box.className = "shop-none";
+      const line = document.createElement("span");
+      line.textContent = "No shops ticked.";
+      const go = document.createElement("button");
+      go.type = "button"; go.className = "plain-button";
+      go.textContent = "Tick a shop";
+      go.addEventListener("click", () => {
+        if (settings.tab !== "shopping") { shoppingFrom = settings.tab; showTab("shopping"); }
+        const first = document.querySelector("#my-shops-shopping input");
+        if (first) { first.scrollIntoView({ block: "center" }); first.focus(); }
+      });
+      box.append(line, go);
+      return box;
+    }
+    // The Ad line: only while Shop links are on and at least one ticked shop has a tracking code in its extra slot. None have one today, so it never shows.
+    function shopAdShows() { return shopLinksOn() && SHOPS.some(s => shopChosen(s) && s.extra); }
+    function buildAdLine() {
+      if (!shopAdShows()) return null;
+      const p = document.createElement("p");
+      p.className = "hint shop-ad";
+      p.textContent = "Ad: we may earn from these links";
+      return p;
+    }
+    // A Find button for one Gear row or Wishlist model: a small fold-out with a search link for each ticked shop that sells every brand.
+    // Only the Gear product type or the model name is in a link, and only when you tap one. Null when Shop links are off.
+    function buildFind(name, nameEl) {
+      if (!shopLinksOn()) return null;
+      const box = document.createElement("details");
+      box.className = "shop-find";
+      const summary = document.createElement("summary");
+      summary.textContent = "Find";
+      labelWithName(summary, "Find", nameEl);
+      const links = document.createElement("div");
+      links.className = "shop-links";
+      const shops = shopsFor([{ paint: { name, brand: "" } }]).map(x => x.shop);
+      for (const shop of shops) {
+        const a = document.createElement("a");
+        a.href = shopLink(shop, { name, brand: "" });
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
+        a.textContent = `${shop.name} ↗`;
+        labelWithName(a, `Search ${shop.name} for`, nameEl);
+        a.setAttribute("aria-describedby", opensSiteId());
+        links.appendChild(a);
+      }
+      box.append(summary, links);
+      if (noShopsTicked()) links.appendChild(buildNoShops());
+      const ad = buildAdLine();
+      if (ad) box.appendChild(ad);
+      return box;
     }
     // ----- v39: plain shop links on suggested paints (Pro preview) -----
     // Under a suggested paint you do NOT own there is a small closed "Shop links" fold-out: an "Add to shopping list" button and a plain
@@ -3035,7 +3098,7 @@
     function buildShopFoldout(paint, owned, source, ownButton) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
       const shops = shopsFor([{ paint }]).map(x => x.shop);
-      if (!shops.length) return null;
+      if (!shops.length && !noShopsTicked()) return null;
       const box = document.createElement("details");
       box.className = "shop-more";
       const summary = document.createElement("summary");
@@ -3058,10 +3121,13 @@
         a.setAttribute("aria-describedby", opensSiteId());
         links.appendChild(a);
       }
+      if (noShopsTicked()) links.appendChild(buildNoShops());   // SHP4
       const note = document.createElement("p");
       note.className = "hint";
       note.textContent = SHOP_PLAIN_WORDS;
-      if (ownButton) body.append(links, note, who); else body.append(addSlot, links, note, who);   // v73: the Mentor rows have their own button
+      const ad = buildAdLine();   // SHP4
+      const tail = ad ? [note, ad] : [note];
+      if (ownButton) body.append(links, ...tail, who); else body.append(addSlot, links, ...tail, who);   // v73: the Mentor rows have their own button
       box.append(summary, body);
       return box;
     }
@@ -3077,6 +3143,8 @@
       bar.append(head, row);
       const offers = shopsFor(items);
       if (!offers.some(o => o.shop.id === shopLinksOpen)) shopLinksOpen = null;
+      if (!offers.length && noShopsTicked()) bar.appendChild(buildNoShops());   // SHP4
+      else { const ad = buildAdLine(); if (ad) head.after(ad); }   // SHP4: only with a tracking code
       for (const { shop, paints } of offers) {
         const b = document.createElement("button");
         b.type = "button";
@@ -3469,6 +3537,8 @@
         labelWithName(remove, "", nameEl);
         remove.addEventListener("click", () => removeGear(g.id));
         li.append(tick, text, remove);
+        const find = buildFind(g.name, nameEl);   // SHP4: the product type only
+        if (find) li.appendChild(find);
         list.appendChild(li);
       }
       return list;
@@ -3525,6 +3595,8 @@
         if (next) next.focus();
       });
       li.append(info, got);
+      const find = buildFind(w.name, name);   // SHP4: the model name the person typed, only in a link they tap
+      if (find) li.appendChild(find);
       return li;
     }
     function renderShopWish() {
@@ -23556,12 +23628,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=170".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=171".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v170";
+    const APP_VERSION = "v171";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -24016,9 +24088,36 @@
     // SHP2: the same switch is also at the top of the Shopping screen (#shop-links-switch). Both boxes read and write settings.hideShopLinks, so they always agree.
     const shopLinksBox = document.getElementById("show-shop-links");
     const shopLinksSwitch = document.getElementById("shop-links-switch");
+    // SHP4: My shops. The same four boxes are on the Shopping screen and in Settings; both read and write settings.hideShops (the unticked ids).
+    const myShopsBoxes = [];
+    for (const host of [document.getElementById("my-shops-shopping"), document.getElementById("my-shops-settings")]) {
+      const legend = document.createElement("legend");
+      legend.textContent = "My shops";
+      host.appendChild(legend);
+      for (const shop of SHOPS) {
+        const label = document.createElement("label");
+        label.className = "check-label my-shop";
+        const box = document.createElement("input");
+        box.type = "checkbox"; box.dataset.myShop = shop.id;
+        label.append(box, " " + shop.name);
+        host.appendChild(label);
+        myShopsBoxes.push(box);
+        box.addEventListener("change", () => {
+          const off = new Set(Array.isArray(settings.hideShops) ? settings.hideShops : []);
+          if (box.checked) off.delete(shop.id); else off.add(shop.id);
+          if (off.size) settings.hideShops = [...off]; else delete settings.hideShops;
+          saveSettings();
+          showShopLinksChoice();
+          render();
+          for (const card of document.querySelectorAll("details.colour-ideas")) if (card.refresh) card.refresh();
+        });
+      }
+    }
     function showShopLinksChoice() {
       shopLinksBox.checked = shopLinksOn();
       shopLinksSwitch.checked = shopLinksOn();
+      for (const b of myShopsBoxes) b.checked = shopChosen({ id: b.dataset.myShop });
+      for (const f of document.querySelectorAll("fieldset.my-shops")) f.hidden = !shopLinksOn();   // nothing to choose while every link is off
     }
     for (const box of [shopLinksBox, shopLinksSwitch]) box.addEventListener("change", () => {
       settings.hideShopLinks = !box.checked;
@@ -24028,9 +24127,14 @@
       for (const card of document.querySelectorAll("details.colour-ideas")) if (card.refresh) card.refresh();
     });
     if (settings.hideShopLinks !== undefined && typeof settings.hideShopLinks !== "boolean") delete settings.hideShopLinks;
+    if (settings.hideShops !== undefined && !(Array.isArray(settings.hideShops) && settings.hideShops.every(x => typeof x === "string"))) delete settings.hideShops;
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v171", date: "16 Nov 2026", changes: [
+        "New My shops ticks, on Shopping and in Settings, choose which shops show in every shop link. Gear and Wishlist rows now have a Find button.",
+        "Fixes and tidying.",
+      ] },
       { version: "v170", date: "15 Nov 2026", changes: [
         "Fixes and tidying.",
         "The phone-size checks of the looks are steadier.",
@@ -24646,6 +24750,7 @@
     if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
     storageProblem = testStorage();   // FX5: storage that throws gets the banner from the start
     if (storageProblem && !unreadableParts.length && !dataTooNew) showSaveProblem();
+    window.minifolioShopTest = (id, extra) => { const x = SHOPS.find(s => s.id === id); if (x) { x.extra = String(extra || ""); render(); } };   // SHP4: test-only, sets a made-up tracking code so the Ad line can be checked; nothing in the app calls it
     window.minifolioStarted = true;   // FX5: early.js looks for this; without it, it shows "Minifolio could not start"
 
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);

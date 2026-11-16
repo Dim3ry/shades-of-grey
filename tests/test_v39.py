@@ -204,8 +204,8 @@ def main():
               page.evaluate("() => SHOPS.every(s => s.extra === '' && Object.keys(s).join() === 'id,name,search,brands,extra,checked')")
               and page.evaluate("() => SHOPS.map(s => s.id).join()") == "firestorm,wayland,element,armypainter")
         panel_for(page, JUST_BLUE)
-        def fold_shape():
-            return page.evaluate("""() => [...document.querySelectorAll('#cmp-paint-panel .shop-more')].map(f => [...f.querySelectorAll('*')].map(e => e.tagName + '.' + e.className).join('|'))""")
+        def fold_shape():   # SHP4: the Ad line now appears when a shop has a code (that is the point of the slot), so it is left out of this layout comparison
+            return page.evaluate("""() => [...document.querySelectorAll('#cmp-paint-panel .shop-more')].map(f => [...f.querySelectorAll('*')].filter(e => !e.classList.contains('shop-ad')).map(e => e.tagName + '.' + e.className).join('|'))""")
         def fold_hrefs():
             return page.evaluate("() => [...document.querySelectorAll('#cmp-paint-panel .shop-more:first-of-type .shop-links a, #cmp-paint-panel .shop-more .shop-links a')].map(a => a.getAttribute('href'))")
         before_shape = fold_shape()
