@@ -1851,8 +1851,15 @@
       const off = new Set(cleanBrandsOff(settings.brandsOff));
       searchedPaints = off.size ? KNOWN_PAINTS.filter(k => !off.has(k.brand)) : KNOWN_PAINTS;
     }
-    // Upper/lower case and curly quotes don't count when spotting a repeat (sameText isn't defined yet here).
-    function sameName(a, b) { return String(a).replace(/[\u2018\u2019]/g, "'").toLowerCase() === String(b).replace(/[\u2018\u2019]/g, "'").toLowerCase(); }
+    // CL1: one Tab loop for every pop-up. Tab on the last stop goes to the first, Shift+Tab on the first goes to the last, and
+    // a focus that is outside the list starts at the first (or the last, going back). Does nothing if there is nothing to stop on.
+    function wrapTab(event, stops) {
+      if (!stops.length) return;
+      const at = stops.indexOf(document.activeElement);
+      const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+      event.preventDefault();
+      stops[next].focus();
+    }
     // Every Vallejo code in a bit of text (a label can show more than one number).
     // The camera often reads 0 as the letter O and 1 as l or I ("72.O21"), so those count as digits
     // in the last three places, as long as at least one real digit is there too.
@@ -5392,7 +5399,7 @@
       return { pieces, to, from, spans, c, at, looks, fromPiece: lit };
     }
     function fillRun(snap) {
-      const { pieces, to, from, spans, c, looks } = snap;
+      const { pieces, to, from, spans, looks } = snap;
       const s = spans.get(to), end = [s[0] - 1.5, s[1] + 1.5];   // 1.5 degrees past each end: the edges fall in the gaps, so the piece is fully lit
       // (James, 3 Nov evening) the slide takes the slow pace, --motion-flow on its ease-out curve, so it reads as a designed move, not a jump
       const slide = canMove(), ms = motionMs(slide ? "--motion-flow" : "--motion-fast") || 1;
@@ -6440,10 +6447,7 @@
           const all = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
           // UX1b: the text box and Send come first, so one Tab from Close (where the window opens) reaches the box.
           const stops = [...all.filter(b => form.contains(b)), ...all.filter(b => !form.contains(b))];
-          const at = stops.indexOf(document.activeElement);
-          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
-          event.preventDefault();
-          stops[next].focus();
+          wrapTab(event, stops);
         }
       };
       document.addEventListener("keydown", state.onKey, true);
@@ -6474,7 +6478,7 @@
       }
       document.body.style.overflow = state.prevOverflow;
       document.body.classList.remove("mentor-open");
-      const { backdrop, win, opener } = state;
+      const { backdrop, opener } = state;
       backdrop.inert = true;
       if (restoreFocus && opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
       let finished = false;
@@ -9879,12 +9883,7 @@
     document.addEventListener("keydown", (event) => {
       if (!viewer) return;
       if (event.key === "Tab" && !dialogState) {
-        const stops = viewerStops();
-        if (!stops.length) return;
-        const at = stops.indexOf(document.activeElement);
-        const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
-        event.preventDefault();
-        stops[next].focus();
+        wrapTab(event, viewerStops());
         return;
       }
       if (event.key === "Escape") { closeViewer(); return; }
@@ -10630,7 +10629,7 @@
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
       // DS1: a danger question starts on the safe answer, so Enter, Space or a held key can't confirm it by accident.
-      const first = text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : cfg.danger ? dialogNo : dialogYes;
+      const first = dialogFirstStop(cfg);
       first.focus();
       if (text || show) first.select();
       queueBackCheck();   // so the phone's Back button can close it
@@ -10685,18 +10684,18 @@
       } else if (event.key === "Tab") {
         const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button, select"), dialogNo, dialogExtra, dialogYes]
           .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]") && !el.disabled);   // SF2: menus are stops too, a disabled control is not
-        const at = stops.indexOf(document.activeElement);
-        const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
-        event.preventDefault();
-        stops[next].focus();
+        wrapTab(event, stops);
       }
     }, true);
+    // CL1: where focus starts in the question box, and where a stray focus is pulled back to. A danger question is on No, never Yes.
+    function dialogFirstStop(cfg) {
+      const text = cfg.mode === "text", show = cfg.mode === "show", pick = cfg.mode === "pick";
+      return text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : cfg.danger ? dialogNo : dialogYes;
+    }
     // If focus somehow lands outside the box (a screen reader's own keys, say), pull it back in.
     document.addEventListener("focusin", (event) => {
       if (dialogState && !dialogBox.contains(event.target)) {
-        const first = !dialogInput.classList.contains("hidden") ? dialogInput : !dialogArea.classList.contains("hidden") ? dialogArea
-          : !dialogPick.classList.contains("hidden") ? (dialogPick.querySelector("input, button") || dialogYes) : dialogYes;
-        first.focus();
+        dialogFirstStop(dialogState.cfg).focus();
       }
     });
 
@@ -11379,10 +11378,7 @@
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeFiltersSheet(); }
         else if (event.key === "Tab") {
           const stops = [...box.querySelectorAll("button")].filter(b => !b.disabled);
-          const at = stops.indexOf(document.activeElement);
-          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
-          event.preventDefault();
-          stops[next].focus();
+          wrapTab(event, stops);
         }
       };
       filtersSheet = { backdrop, body, clear, show, opener: document.activeElement, onKey };
@@ -17201,10 +17197,7 @@
           closeSimilar();
         } else if (event.key === "Tab") {
           const stops = [...box.querySelectorAll("button, select")].filter(b => b.tabIndex >= 0 && b.offsetParent !== null);   // Mix2: the recipe picker's dropdowns too   // v66: the tab not in use is skipped (arrow keys reach it)
-          const at = stops.indexOf(document.activeElement);
-          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
-          event.preventDefault();
-          stops[next].focus();
+          wrapTab(event, stops);
         }
       };
       document.addEventListener("keydown", state.onKey, true);
@@ -20177,7 +20170,7 @@
         d.parsed.schemes.forEach((s, si) => {
           const schemeName = (d.names[si] || "").trim() || "Imported recipes";
           const ids = [];
-          for (const [pi, whole] of s.parts.entries()) for (const [si2, part] of importSections(whole).entries()) {
+          for (const whole of s.parts) for (const [si2, part] of importSections(whole).entries()) {
             const steps = part.steps.map(step => {
               const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
                 // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
@@ -21029,7 +21022,6 @@
     }
     // How a colour reads on the dark cards. Under 3 is too faint for a stage's name to be
     // read easily. (Light mode deepens pale colours by itself, so light cards are fine.)
-    const DARK_CARD = "#141d2f";
     const FAINT_BELOW = 3;
     const tooFaintOnDark = (hex) => contrastRatio(hex, darkCard()) < FAINT_BELOW;
 
@@ -21110,10 +21102,6 @@
     // The lightest version of a colour (same hue and saturation) that still reads at
     // the given contrast on the light cards.
     const LIGHT_CARD = "#f8fafc";
-    // v21.8: the light PAGE colour (a little darker than the cards). Some stage names sit
-    // straight on the page (the big ▲ button, the Custom colour rows), so stage colours
-    // are made readable against this one, which also covers the cards.
-    const LIGHT_PAGE = "#e9eff6";
     function lightnessCap(h, sat, target, surface = lightCard()) {
       let low = 0, high = 1;
       for (let i = 0; i < 20; i++) {
@@ -22484,16 +22472,6 @@
       model.log = since && since !== added && model.stage !== 0 ? [[added, 0], [since, model.stage]] : [[added, model.stage]];
     }
 
-    // A stage number from a stage name (any capitals) or a number. Unknown = first stage.
-    function stageFromText(text) {
-      const cleaned = (text || "").trim().toLowerCase();
-      const byName = STAGES.findIndex(s => s.toLowerCase() === cleaned);
-      if (byName !== -1) return byName;
-      const asNumber = Number(cleaned);
-      if (cleaned !== "" && Number.isInteger(asNumber) && asNumber >= 0 && asNumber < STAGES.length) return asNumber;
-      return 0;
-    }
-
     // v19.1: CSV rows to units. The FIRST line must be the column titles and include "name";
     // the other columns are found by their titles, so they can be in any order (or missing).
     // Without a "name" title the file is refused, so a random file can't become units.
@@ -23628,12 +23606,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=171".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=172".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v171";
+    const APP_VERSION = "v172";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -24131,6 +24109,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v172", date: "16 Nov 2026", changes: [
+        "Fixes and tidying.",
+        "Pop-ups share one way of moving focus with Tab, and a warning question stays on No.",
+      ] },
       { version: "v171", date: "16 Nov 2026", changes: [
         "New My shops ticks, on Shopping and in Settings, choose which shops show in every shop link. Gear and Wishlist rows now have a Find button.",
         "Fixes and tidying.",
