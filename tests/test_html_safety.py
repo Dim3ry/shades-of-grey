@@ -100,6 +100,8 @@ REVIEWED_URLS = {
     "11baaa6a3e70": "shop link (paint panel)",
     # L1: a fixed shop address from the SHOPS table with a product type from where-to-buy.js (built-in data) passed through encodeURIComponent.
     "e4388a5f06de": "shop link (Where to buy)",
+    # SHP4: the Find fold-out on Gear and Wishlist rows: a fixed shop address from the SHOPS table with the Gear product type or typed model name passed through encodeURIComponent.
+    "3fae98fb9b3e": "shop link (Find on Gear and Wishlist rows)",
     # Drawing helpers: attribute names written out in the code that calls them (chart and icon shapes), never typed text.
     # (U6b + LR1: the two helpers that drew the old Mentor orb and the old loading ring are gone, so their entries went too.)
     "7feb5ff72527": "svgEl helper",

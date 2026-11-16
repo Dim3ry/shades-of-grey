@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=170"></script>
-  <script src="early.js?v=170"></script>
+  <script src="mentor-looks.js?v=171"></script>
+  <script src="early.js?v=171"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1740,6 +1740,21 @@
     .paint-panel .share-row .plain-button { min-height: 44px; }
     /* v39: the closed "Shop links" fold-out under a suggested paint you do not own. Small and quiet: the colour suggestion above it comes first.
        Plain text buttons and links only (no logos). Uses the same colour variables, so dark and light follow the theme. */
+    /* SHP4: My shops ticks, the Find fold-out on Gear and Wishlist rows, the no-shops line and the Ad line */
+    fieldset.my-shops { border: 0; margin: 0 0 8px; padding: 0; min-width: 0; }
+    fieldset.my-shops legend { padding: 0; font-size: 0.8125rem; color: var(--muted); }
+    fieldset.my-shops .my-shop { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 0.9375rem; cursor: pointer; }
+    fieldset.my-shops .my-shop input { flex: none; }
+    .shop-none { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0; font-size: 0.875rem; }
+    .shop-ad { margin: 4px 0; }
+    .shop-item:has(> .shop-find), li.wish-row:has(> .shop-find) { flex-wrap: wrap; }
+    .shop-find { flex: 1 0 100%; min-width: 0; }
+    .shop-find > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 0.8125rem; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
+    .shop-find > summary::-webkit-details-marker { display: none; }
+    .shop-find > summary::after { content: "\25BE"; }
+    .shop-find[open] > summary { color: var(--accent); }
+    .shop-find[open] > summary::after { content: "\25B4"; }
+    .shop-find > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .shop-more { margin: 4px 0 0; min-width: 0; }
     .shop-more > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 0.8125rem; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
     .shop-more > summary::-webkit-details-marker { display: none; }
@@ -3591,6 +3606,7 @@
     <section id="view-shopping" class="hidden">
       <h2 class="more-title" id="shopping-title">Shopping</h2>
       <label class="check-label shop-links-row"><input type="checkbox" id="shop-links-switch"> Show shop links</label>
+      <fieldset class="my-shops" id="my-shops-shopping"></fieldset>
       <div class="seg tab-row" id="shop-seg" role="tablist" aria-label="Paints, Gear or Wishlist">
         <button role="tab" data-stab="paints">Paints</button>
         <button role="tab" data-stab="gear">Gear</button>
@@ -3817,7 +3833,7 @@
             <li id="help-shop-add">Each tab has an add button under the tab row. <strong>+ Add paint</strong> searches the paint list and <strong>Add to shopping list</strong> puts the paint on your list as Wishlist. <strong>+ Add gear</strong> lists the things from Where to buy by guide. <strong>+ Add model</strong> opens the same form as Models. In Colour Lab, a paint you do not own has <strong>Add to shopping list</strong> on its row, in the colour wheel panel too, and every Add has an Undo. An example paint cannot go on the list: add your own paint first.</li>
             <li id="help-shopping-tabs"><strong>Gear</strong> holds the things added from Where to buy. <strong>Wishlist</strong> shows the models on your Models Wishlist, with their count and note. Tap one to open it in Models, or press <strong>Got it</strong> to move it into Models (Undo puts it back). The number on the Shopping button counts paints and Gear only. <strong>Copy as text</strong> lists Paints, Gear and Wishlist under their own headings. <strong>Show shop links</strong> at the top of the screen is the same switch as in Settings.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Paints tab, and the Guides sections use the full width.</li>
-            <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Your data → Shop links</strong>. Your shopping list stays.</li>
+            <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Your data → Shop links</strong>. Your shopping list stays. <strong>My shops</strong>, under the same switch and at the top of the Shopping screen, ticks which shops you use: only those show in every shop link. Gear and Wishlist rows have a <strong>Find</strong> button that searches those shops for the Gear product type or the model name, only when you tap a link.</li>
             <li id="help-colour-lab"><strong>Colour Lab</strong> (in Painting): the colour wheel, <strong>Colour ideas</strong>, <strong>Colour plans</strong>, <strong>Colours you've used</strong> and the <strong>Paint Picker</strong>. Suggested paints show a fit and your own paints come first.</li>
             <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. <strong>Colour Lab</strong> opens with that paint's ideas at the top: colours that go with it, colour plans with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you back.</li>
             <li id="help-wheel-order">In the <strong>Colour Lab</strong> wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
@@ -3921,7 +3937,7 @@
             <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
             <li id="privacy-mentor"><strong>Mentor</strong> runs on this device. What you type to Mentor is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</li>
             <li id="privacy-drafts"><strong>Unfinished work:</strong> to keep a half-written recipe, a half-filled Add unit form or pasted notes through a reload, the app saves what you typed in this browser on this device. It is never sent anywhere, it is not in your backups, and it is removed when you finish it or discard it.</li>
-            <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Your data → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
+            <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Your data → Shop links. The link carries just one name for the shop's search: the paint's name, the Gear product type or the model name you tapped a link or Find on. The shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the only other address it is allowed to load anything from is the visit counter's tiny picture (above). The app can't quietly send your data to any other website (a “Content Security Policy”).</li>
             <li><strong>No tracking of you:</strong> no adverts, no cookies, no accounts, nothing about your collection is ever sent, and nothing is sold. The only counting is the anonymous visit count above, which you can switch off.</li>
             <li>Like any website, the site's host (Cloudflare) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
@@ -3935,7 +3951,7 @@
             <li>The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li id="about-fonts"><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Font licences</a></li>
             <li id="about-credits-help"><button type="button" class="link-button" id="help-credits-link">Credits</button></li>
-            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
+            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and, when you tap a shop link or Find, the paint's name, Gear product type or model name you tapped.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
           </ul>
         </details>
@@ -4159,6 +4175,7 @@
         <div class="settings-part" id="shoplinks-card">
           <h3>Shop links</h3>
           <label class="check-label shoplinks-label"><input type="checkbox" id="show-shop-links"> Show shop links</label>
+          <fieldset class="my-shops" id="my-shops-settings"></fieldset>
         </div>
         <button class="danger-button" id="delete-all">Delete all units</button>
       </div>
@@ -4200,7 +4217,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=170" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=171" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4213,16 +4230,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=170"></script>
-  <script src="schemes.js?v=170"></script>
-  <script src="detail-recipes.js?v=170"></script>
-  <script src="basing-tips.js?v=170"></script>
-  <script src="mentor-tips.js?v=170"></script>
-  <script src="guides-data.js?v=170"></script>
-  <script src="guides-groups.js?v=170"></script>
-  <script src="mentor-data.js?v=170"></script>
-  <script src="mentor-engine.js?v=170"></script>
-  <script src="where-to-buy.js?v=170"></script>
-  <script src="app.js?v=170"></script>
+  <script src="colour.js?v=171"></script>
+  <script src="schemes.js?v=171"></script>
+  <script src="detail-recipes.js?v=171"></script>
+  <script src="basing-tips.js?v=171"></script>
+  <script src="mentor-tips.js?v=171"></script>
+  <script src="guides-data.js?v=171"></script>
+  <script src="guides-groups.js?v=171"></script>
+  <script src="mentor-data.js?v=171"></script>
+  <script src="mentor-engine.js?v=171"></script>
+  <script src="where-to-buy.js?v=171"></script>
+  <script src="app.js?v=171"></script>
 </body>
 </html>
