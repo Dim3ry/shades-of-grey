@@ -171,7 +171,7 @@ def main():
               all(w in help_li for w in ["Shop links", "Add to shopping list", "plain links", "paint's name", "Settings"]) and "fold-outs under suggested paints" in privacy and "Settings → Your data → Shop links" in privacy, (help_li[:200], privacy[-600:]))
         # (v47: early.js left this list; it now puts the theme on the page too.)
         new_code = app[app.index("v39: plain shop links on suggested paints"):app.index("function buildBuyBar(")]
-        switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("const CHANGELOG = [")]
+        switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("// ================= THE CHANGELOG (the Updates tab's list)")]   # SZ1 (v173): the CHANGELOG list now lives in changelog.js, so "const CHANGELOG" is no longer in app.js; its banner comment (just before the old place) marks the same end of this section.
         check("the new code has no network code, no storage of its own, no eval, no innerHTML or other page-writing from text, and builds with createElement and textContent",
               len(new_code) > 3000 and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|document\.write|\.src\s*=", new_code + switch_code)
               and "createElement(\"details\")" in new_code and "textContent" in new_code, [m.group(0) for m in re.finditer(r"(fetch|innerHTML|outerHTML|localStorage)[^\n]*", new_code + switch_code)][:3])

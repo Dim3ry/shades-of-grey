@@ -698,7 +698,8 @@ def main():
         start = app.index("v26: UNFINISHED WORK")
         # v27: its section sits just before the Updates list, so stop where v27's begins.
         stop = app.find("v27: COUNTING VISITS", start)
-        section = app[start:(stop if stop > 0 else app.index("const CHANGELOG", start))]
+        # SZ1 (v173): the CHANGELOG list now lives in changelog.js, so "const CHANGELOG" is no longer in app.js; its banner comment (just before the old place) marks the same end of this section.
+        section = app[start:(stop if stop > 0 else app.index("// ================= THE CHANGELOG (the Updates tab's list)", start))]
         check("it uses no inline handlers, eval, innerHTML with typed text or browser pop-ups",
               not re.search(r"onclick=|eval\(|new Function|\balert\(|\bconfirm\(|\bprompt\(", section))
         check("it only reads and writes the one drafts entry", len(re.findall(r"localStorage\.(?:get|set|remove)Item\((?!DRAFTS_KEY)", section)) == 0)

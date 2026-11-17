@@ -12,7 +12,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v172";
+const VERSION = "v173";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -89,6 +89,7 @@ const APP_FILES = [
   "./mentor-data.js" + CODE_TAG,  // X8b: Mentor matching data (synonyms, extra keywords, asked-as phrases)
   "./mentor-engine.js" + CODE_TAG,  // X6a: the Mentor answer engine (feeds the Mentor window and Guides)
   "./where-to-buy.js" + CODE_TAG,  // L1: what to buy for some Guides entries (the Where to buy fold-outs)
+  "./changelog.js" + CODE_TAG,  // SZ1: the Updates list of versions (moved out of app.js; loaded just before it)
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",

@@ -87,7 +87,7 @@ def main():
         check("the words: Good fit, Okay fit, Poor fit, and Yours, not close for a poor paint you own",
               j["lab"] == ["Close", "Near", "Not close", "Yours, not close", ""], j["lab"])
         check("the cut-offs are set once, in colour.js", len(re.findall(r"const GOOD_UNDER = 6, CLOSE_UNDER = 15", colour)) == 1 and "GOOD_UNDER" not in app and "CLOSE_UNDER" not in app)
-        app_code = re.sub(r"const CHANGELOG = \[.*?\n    \];", "", app, flags=re.S)   # (the v64 Updates entry names them, on purpose)
+        app_code = app   # SZ1 (v173): the CHANGELOG list (whose v64 entry names the cut-offs on purpose) moved to changelog.js, so there is nothing to cut out of app.js now
 
         # ---------- 3. suggestPaint ----------
         print("\n--- 3. Who goes first ---")
