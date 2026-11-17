@@ -1,6 +1,5 @@
 """U7 tests for Minifolio (Mentor looks round 7: James's own drawings, with round 6 kept as a fallback). New behaviour only:
-1. Round 6 is kept: mentor-looks-r6.js is there with its one comment line, and nothing the app ships loads or caches it (only mentor-looks.js
-   names it, in SWITCHING BACK, which lists the steps back).
+1. (DOC1: round 6's file is deleted; it is in git commit dde6e3b, and mentor-looks.js says so in one line.)
 2. The looks file: three looks with all five states; every class starts ml-; no ids, scripts, images, gradients or filters; the CSS uses only
    --mentor-* variables, defines none and has no fixed colours; nothing uses --mentor-s0 to --mentor-s4; every animation is inside .ml-live,
    and reduced motion (and .ml-still) stops it.
@@ -66,19 +65,11 @@ def css_rules(css):
 def main():
     root = t.ROOT
     src = t.read("mentor-looks.js")
-    r6 = t.read("mentor-looks-r6.js")
     html = t.read("index.html")
-    print("--- 1. Round 6 is kept ---")
-    check("mentor-looks-r6.js is round 6 with its one comment line on top",
-          r6.split("\n")[0] == "// Round 6 Mentor looks, kept in case George prefers them. To switch back, see SWITCHING BACK in mentor-looks.js."
-          and "const MENTOR_LOOKS = {" in r6 and "--mentor-s0" in r6)
-    shipped = [n for n in os.listdir(root) if n.endswith((".js", ".html", ".json")) and n not in ("mentor-looks.js", "mentor-looks-r6.js")]
-    named = [n for n in shipped if re.search(r"""["'/]mentor-looks-r6\.js""", open(os.path.join(root, n), encoding="utf-8").read())]
-    check("nothing the app ships loads or caches round 6 (no page, script or worker file asks for it)", shipped and not named, named)
-    head = src[:src.find("const MENTOR_LOOKS")]
-    check("SWITCHING BACK at the top of mentor-looks.js lists the way back", head.startswith("// ===== SWITCHING BACK") and all(w in head for w in
-          ("mentor-looks-r6.js", "cache list", "#mentor-button", "25 25 150 150", "--mentor-s0", "--mentor-s4", "Bump the version")))
-
+    # DOC1: the checks that round 6 is kept as a file (mentor-looks-r6.js, the SWITCHING BACK steps) are gone: George agreed the unused file
+    # could be deleted. Round 6 is in git commit dde6e3b. Every other check in this file stays.
+    print("--- 1. Round 6 file ---")
+    check("mentor-looks.js points to round 6 in git (commit dde6e3b)", "dde6e3b" in src[:300])
     print("\n--- 2. The looks file ---")
     css = src.split("const MENTOR_LOOKS_CSS = ", 1)[1]
     drawings = src.split("const MENTOR_LOOKS_CSS", 1)[0]

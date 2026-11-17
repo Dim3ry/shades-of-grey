@@ -5,6 +5,45 @@
 // It's loaded at the very bottom of index.html, after everything you see, exactly where the
 // old <script> block was, so it runs at the same moment as before.
 
+    // ===== WHERE THINGS LIVE (DOC1): grep the banner text or name. Line numbers are approximate and drift. =====
+    //   Area (what to grep)                                                                          about line
+    //   Saving safely, unreadable data, Save banner                                                  102
+    //   Settings and stages                                                                          282
+    //   Paint catalogue (data only; never edit by hand)                                              554
+    //   Shared paint-name matcher                                                                    1999
+    //   Paint status, search and shopping list code                                                  2221
+    //   Gear (book.gear, on the shopping list)                                                       2528
+    //   Shopping screen: Paints, Gear, Wishlist tabs, My shops (openShopping)                        3227
+    //   Tabs and showTab                                                                             4891
+    //   Mentor window (openMentor)                                                                   5685
+    //   Nexus (renderDashboard), faction colours, then Models cards and panels                       6654
+    //   Models list (renderUnits)                                                                    7675
+    //   Sort and Filters for Models                                                                  10771
+    //   Wishlist models (settings.modelWishes, wishes())                                             10911
+    //   Painting (renderRecipes), schemes, Colour ideas                                              11604
+    //   Guides (renderGuides; old name Compendium)                                                   16612
+    //   Similar paints, colour wheel                                                                 16859
+    //   Colour Lab (renderColourLab)                                                                 18899
+    //   Label reader (scan a paint pot)                                                              20304
+    //   Settings tab and themes (THEMES, THEME_SURFACES)                                             20834
+    //   Save backup, restore, Recover (keepSafetyCopy), CSV                                          21910
+    //   Updates tab and APP_VERSION                                                                  23652
+    //   CHANGELOG (newest entry first)                                                               24157
+    //   Start up, two windows, back button                                                           24745
+    //   Service worker notes (the worker is sw.js)                                                   25033
+    //   Themes: THEMES and THEME_SURFACES (CSS twin is in index.html)                                21078
+    // Other code files have their own header comments: early.js, colour.js, schemes.js, detail-recipes.js, basing-tips.js, mentor-*.js,
+    // guides-*.js, where-to-buy.js and sw.js. Never edit between the PAINT RECIPES and SHARED PAINT-NAME MATCHER banners (a test fingerprints it).
+
+    // ===== GLOSSARY (DOC1): what the screen says -> what the code calls it. Nothing is renamed. =====
+    //   Nexus (the first screen)          -> dashboard: renderDashboard, #view-dashboard, data-tab="dashboard"
+    //   Models                            -> units: renderUnits, #view-units (the stored list is `models`)
+    //   Painting                          -> recipes: renderRecipes, #view-recipes (Colour Lab and Schemes live inside it)
+    //   Wishlist (models you want)        -> wishes(), settings.modelWishes. The paint status "Wishlist" is a different thing.
+    //   Shopping (list and basket)        -> shopping, basket, openShopping, #view-shopping; tabs Paints, Gear, Wishlist
+    //   Guides                            -> compendium: compendiumState, renderGuides, #view-guides
+    //   Gear                              -> gear: book.gear, gearList(), setGear()
+
     // ===== JavaScript: this section is how things BEHAVE. =====
     // Lines starting with // are comments.
 
@@ -2828,7 +2867,7 @@
     }
     // ----- SHP4: My shops, the Ad line and the Find buttons -----
     // settings.hideShops: the ids of the shops that are UNticked (so every shop is ticked until you untick it, and a shop added later is ticked too).
-    // Saved settings like the Shop links switch, so not in backups and DATA_VERSION stays. shopsFor only returns ticked shops, so every bar,
+    // Saved settings like the Shop links switch, so not in backups and DATA_VERSION is not changed. shopsFor only returns ticked shops, so every bar,
     // Where to buy row, fold-out and Find button follows the choice.
     function shopChosen(shop) { return !(Array.isArray(settings.hideShops) && settings.hideShops.includes(shop.id)); }
     function noShopsTicked() { return !SHOPS.some(shopChosen); }
@@ -4652,7 +4691,7 @@
       else showSaveProblem();
       return ok;
     }
-    // The older name, still used all over the app.
+    // The older name for saveAll; nine places still call it.
     function save() { return saveAll(); }
 
     // For BIG changes (new stages, restoring a backup, recovering earlier data): make the
@@ -5679,7 +5718,7 @@
 
     // ---- U6b: THE MENTOR LOOK (Settings > Mentor look: Futuristic, Magical or Grounded) ----
     // James's drawings are in mentor-looks.js (MENTOR_LOOKS[look][state]; early.js puts their styles on the page and makes each drawing,
-    // minifolioLook.svg). The look is settings.mentorLook; missing or unknown means Futuristic, the default (saved settings, so DATA_VERSION stays 1).
+    // minifolioLook.svg). The look is settings.mentorLook; missing or unknown means Futuristic, the default (saved settings, so no DATA_VERSION change).
     // Like Shop links it is not in backups, so restoring a backup (old or new) leaves your look as it is.
     // The round button (in the bar and in the middle of the start circle) always shows the look's neutral drawing; the moods are for the window only.
     const MENTOR_LOOK_NAMES = { futuristic: "Futuristic", magical: "Magical", grounded: "Grounded" };
@@ -6550,7 +6589,7 @@
 
     // render() redraws the screen from the data. Change the data first, then render().
     // It saves first, so every change is saved from this one place.
-    // Saves, then redraws everything. v18c-3: reports back true if the save worked.
+    // Saves, then redraws the section on screen (see staleTabs below). v18c-3: reports back true if the save worked.
     // DS2: only the section on screen is drawn straight away. The other sections that show your data (Dashboard, Units, Recipes,
     // and Recipe preferences in Settings) are noted in staleTabs and drawn when they are opened (showTab), before they appear,
     // so what you see is always up to date. Before DS2 every tap rebuilt all of them: with 600 units, 1,500 paints and 300 recipes
@@ -6605,7 +6644,7 @@
       return ok;
     }
 
-    // ================= FACTION COLOURS =================
+    // ================= FACTION COLOURS (this banner covers more: the NEXUS, the MODELS list, unit cards and panels, example data, down to THE PHOTO STORE) =================
     // Each faction can have a colour you pick. It's shown as a tint on unit cards, a bar on
     // the dashboard's faction cards and a mark on the faction filter. The STAGE colour
     // stripe on unit cards stays as it is: stage = left stripe, faction = tint and dot.
@@ -9118,7 +9157,7 @@
     // (but v44's Settings → Restore example recipes can bring the examples back for anyone, on
     // purpose, with a click). The marks are "example: true" on a recipe, a scheme or a paint;
     // older versions keep unknown fields (cleanRecipeBook copies recipes, schemes and paints with
-    // ...), so nothing here changes the shape of saved data (DATA_VERSION stays 1).
+    // ...), so nothing here changes the shape of saved data (no DATA_VERSION change).
     // Rules: Clear removes only the example recipes, the example schemes, and the example paints
     // that nothing of yours uses. A paint you've used in your own recipe or given a status, and a
     // recipe, scheme or paint you edited, is yours. Example paints never appear on the shopping
@@ -16010,7 +16049,7 @@
       return box;
     }
 
-    // ---- v70: MENTOR TIPS (the library, no screen yet) ----
+    // ---- v70: MENTOR TIPS (the library; the Mentor window and Guides read it) ----
     // The tips (MENTOR_TIPS, with MENTOR_PARTS and MENTOR_TECHNIQUES) live in mentor-tips.js, which loads between basing-tips.js and
     // this file. mentorTipsFor() hands back the tips that fit what is asked: part (exactly one of the four parts), technique and
     // colour (each matches when the tip's own words contain it, ignoring capitals). Anything left out matches every tip. With no
@@ -16564,7 +16603,7 @@
     }
 
     // ================= v35: THE COMPENDIUM TAB (Pro preview) =================
-    // The fifth bottom tab. It shows the same content as the Colour ideas card in the recipe editor (paint ideas for a colour you
+    // Now the Guides screen (view-guides, opened from the Tools tab; it was once the fifth bottom tab). It shows the same content as the Colour ideas card in the recipe editor (paint ideas for a colour you
     // choose, Your schemes, Starter schemes, Detail recipes, Basing tips) WITHOUT needing a recipe. It is the second "door" onto the
     // shared building blocks above (see "ONE set of building blocks, TWO doors"): there is no recipe to add steps to, so the rows
     // are plain and each part ends with "Copy as text" and "Save into a new recipe…" instead. The data files are the same ones.
@@ -16810,7 +16849,7 @@
       return wrap;
     }
 
-    // ================= v65: SIMILAR PAINTS (chunk 3.5a) =================
+    // ================= v65: SIMILAR PAINTS (chunk 3.5a; below it, until COLOUR LAB: the colour wheel and the GUIDES screen, renderGuides) =================
     // A "Similar paints" button on a paint in the Compendium opens a pop-up with one card, Best match: up to 3 paints from different
     // brands where possible, closest first, whether or not you own them. Lighter / Close / Darker moves the colour being matched.
     // Each paint can go on the shopping list (with Undo). v66 (chunk 3.5b-1): a second card, Your closest (the nearest paints you own),
@@ -23500,7 +23539,7 @@
     //   - you have never saved a backup, or the last one is BACKUP_NUDGE_AGE_DAYS old and your units or recipes changed since
     //   - you didn't tap Not now in the last BACKUP_NUDGE_WAIT_DAYS days
     //   - neither the iPhone warning nor the feedback card is up (only one notice at a time; see planFeedbackPrompt)
-    // Saved on this device only, in the settings (so DATA_VERSION stays 1):
+    // Saved on this device only, in the settings (so no DATA_VERSION change):
     //   settings.lastBackup            "2026-10-23"  the day the last backup was saved or sent (since v14)
     //   settings.lastBackupPrint       "k1a2b3c"     a short fingerprint of the units and recipes in that backup
     //   settings.backupNudgeNextAfter  "2026-11-06"  after Not now: not before this day
@@ -23635,7 +23674,7 @@
     //   settings.feedbackShownOn    "2026-10-19"  the day the card was put up (it stays that day)
     // People who already used the app get TODAY as their first day (they are asked a week after
     // they update, not at once). If the card is not answered, the next visit counts it as
-    // "Not now", so it can never show on two days running. Saved settings, so DATA_VERSION stays 1
+    // "Not now", so it can never show on two days running. Saved settings, so no DATA_VERSION change
     // (older versions keep settings they don't know).
     const FEEDBACK_AFTER_DAYS = 7;
     const FEEDBACK_WAIT_DAYS = 30;
@@ -23727,7 +23766,7 @@
     // They live in ONE separate storage entry (DRAFTS_KEY), not in the units, recipes or settings,
     // so they never travel in a backup, never trigger the other-window reload, and a save that
     // fails can never roll them back. Older versions simply ignore an entry they don't know, so
-    // DATA_VERSION stays 1. Nothing is sent anywhere.
+    // no DATA_VERSION change. Nothing is sent anywhere.
     //
     // How it works. syncDrafts() looks at what's on screen and writes it down. It runs a moment after
     // every tap, key press or change, when the page is hidden or closed, and every few seconds as a
@@ -24001,7 +24040,7 @@
     //   - One count per start-up, never from the other-window sync or a redraw.
     //   - No internet: the request just fails and nothing else happens (sw.js leaves it alone).
     //   - Settings -> Counting visits switches it off. The choice is settings.countVisits: only an
-    //     explicit false means off (saved settings, so DATA_VERSION stays 1; older versions keep it).
+    //     explicit false means off (saved settings, so no DATA_VERSION change; older versions keep it).
     //     It is not in backups, like the feedback card's dates.
     // v46: LINK TAG. A link such as minifolio.app/?from=dakka is counted under the tag "dakka", so the
     // count can show which place a visit came from even though no referrer is sent. How: GoatCounter's own
@@ -24061,7 +24100,7 @@
     // ================= v39: THE SHOP LINKS SWITCH =================
     // Settings -> Shop links. On by default. Off hides EVERY shop link and shop button: the Buy these bar on the shopping list, and the
     // "Shop links" fold-outs (with Add to shopping list) under suggested paints. Your shopping list itself stays. The choice is
-    // settings.hideShopLinks: only an explicit true means hidden (saved settings, so DATA_VERSION stays 1). Like the visit counter
+    // settings.hideShopLinks: only an explicit true means hidden (saved settings, so no DATA_VERSION change). Like the visit counter
     // it is not in backups (a backup holds your units, recipes and stages, never settings like this one).
     // SHP2: the same switch is also at the top of the Shopping screen (#shop-links-switch). Both boxes read and write settings.hideShopLinks, so they always agree.
     const shopLinksBox = document.getElementById("show-shop-links");
@@ -24108,6 +24147,7 @@
     if (settings.hideShops !== undefined && !(Array.isArray(settings.hideShops) && settings.hideShops.every(x => typeof x === "string"))) delete settings.hideShops;
     showShopLinksChoice();
 
+    // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
       { version: "v172", date: "16 Nov 2026", changes: [
         "Fixes and tidying.",
