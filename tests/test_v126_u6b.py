@@ -205,7 +205,7 @@ def main():
 
         print("\n--- 6. Colours and sizes ---")
         # U7 reversed this (James, 3 Nov): the avatars take the theme's colours only. app.js still sets the colour set's five colours
-        # (--mentor-s0 to --mentor-s4, which round 6 in mentor-looks-r6.js reads), but the ring no longer follows them.
+        # (--mentor-s0 to --mentor-s4, which round 6, now only in git commit dde6e3b, read), but the ring no longer follows them.
         RING = "() => [0, 1, 2, 3, 4].map(i => getComputedStyle(document.querySelector('#mentor-button .ml-segs .ml-k' + i)).stroke)"
         page.evaluate("() => { settings.mentorLook = 'futuristic'; applyMentorLook(); }")
         ring0 = page.evaluate(RING)

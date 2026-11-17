@@ -1,7 +1,7 @@
 // ===== guides-groups.js: the Guides topic groups and See also links (plain data) =====
 // This file is only data. It draws nothing, talks to nothing and stores nothing. app.js reads it when it shows a Guides list.
 //
-// How it is shared: it is loaded as a plain script just before app.js (after guides-data.js), so GUIDE_GROUPS is there when app.js starts.
+// How it is shared: it is loaded as a plain script before app.js (after guides-data.js; more files load between it and app.js, see the script tags at the bottom of index.html), so GUIDE_GROUPS is there when app.js starts.
 //
 // G2a: GUIDE_GROUPS.sections puts every entry of Colour basics, Techniques, Tools and prep and Problems (guides-data.js) into one
 // topic group of its own section: { section key: [ { name, keys: [entry keys] } ] }. Detail recipes and Basing keep the groups in their

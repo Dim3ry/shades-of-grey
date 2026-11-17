@@ -2,7 +2,7 @@
 // Turns what a person typed (or a starter question) into an answer made only from our own entries and the colour rules.
 // No AI model, no server, no network, nothing stored. It draws nothing. Same input, same output.
 //
-// How it is shared: loaded as a plain script just before app.js (after guides-data.js and mentor-data.js). It adds ONE name to the page,
+// How it is shared: loaded as a plain script before app.js (after guides-data.js and mentor-data.js; where-to-buy.js loads between it and app.js). It adds ONE name to the page,
 // MinifolioMentor.
 // The test file loads the very same file in Node. mentorAnswer(text, context) is MinifolioMentor.mentorAnswer.
 //
