@@ -1,7 +1,7 @@
 // ===== guides-data.js: the Guides library's new kinds of entry (plain data) =====
 // This file is only data. It draws nothing, talks to nothing and stores nothing. app.js reads it through knowledgeIndex().
 //
-// How it is shared: it is loaded as a plain script just before app.js (after mentor-tips.js), so the names below
+// How it is shared: it is loaded as a plain script before app.js (after mentor-tips.js; mentor-data.js, mentor-engine.js and where-to-buy.js load after it), so the names below
 // (GUIDE_ENTRIES and GUIDE_STARTERS) are there when app.js starts.
 //
 // Where the entries come from: the knowledge base written from knowledge-base/SCHEMA.md and merged by chunk X8 (written by

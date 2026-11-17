@@ -329,7 +329,7 @@
        wet sheen on the Grounded paint. */
     /* U7: round 7's looks (James's drawings) take their colours from the theme only: --mentor-t1, --mentor-t2 and --mentor-t3 are the theme's own dark-mode
        good, note and muted colours, so they read the same in light mode (like --mentor-dot). The stage colour set no longer changes the avatars; app.js
-       still sets --mentor-s0 to --mentor-s4, which only round 6 (mentor-looks-r6.js) reads. */
+       still sets --mentor-s0 to --mentor-s4, which only round 6 (in git commit dde6e3b, file mentor-looks-r6.js) reads. */
     :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; --mentor-t1: #5eead4; --mentor-t2: #c4b5fd; --mentor-t3: #8193ad; }
     :root[data-t="parchment"] { --mentor-dot: #dc6575; --mentor-t1: #8cbf7a; --mentor-t2: #6fb8a6; --mentor-t3: #a79877; }
     :root[data-t="forge"] { --mentor-dot: #e8642c; --mentor-t1: #80c56b; --mentor-t2: #6fc3b5; --mentor-t3: #9c9a93; }   /* TH2: the new forge orange; U7: TH2's dark good, note and muted */
@@ -410,7 +410,7 @@
     .mo-load .lr-back { stroke: var(--mentor-lens); stroke-width: 14; }
     .mo-load .lr-s { stroke-width: 10; opacity: 0.2; }
     /* U7: the five segments take the same theme colours as round 7's Futuristic ring (t3, t2, half t2 and half dot, dot, t1), so the ring hands over to
-       an orb of the same colours. Round 6's strokes (--mentor-s0 to --mentor-s4) are listed under SWITCHING BACK in mentor-looks.js. */
+       an orb of the same colours. Round 6's strokes (--mentor-s0 to --mentor-s4) are in git commit dde6e3b (mentor-looks-r6.js). */
     .mo-load .lr-s0 { stroke: var(--mentor-t3, var(--mentor-rim)); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -3.1; }
     .mo-load .lr-s1 { stroke: var(--mentor-t2, var(--mentor-b)); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -58.86; }
     .mo-load .lr-s2 { stroke: color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core))); stroke-dasharray: 60.73 446.11; stroke-dashoffset: -114.63; }
@@ -3211,7 +3211,7 @@
     body.mentor-open .toast { z-index: 210; bottom: auto; top: 12px; }
     body.mentor-open .toast:not(.hidden) { animation-name: mo-fade; }   /* D: at the top it fades in instead of sliding up from below, so it never passes over the X or Back on the way */   /* a notice from a row in the window shows at the top, clear of every button in it */
     /* U7: the window orb no longer has the app's own 4 s float (.mp-orb { animation: mp-float 4s ease-in-out infinite; }): every round 7 look brings its
-       own bob, so the two were stacked. The keyframes below stay for round 6 (see SWITCHING BACK in mentor-looks.js). */
+       own bob, so the two were stacked. The keyframes below stay for round 6 (git commit dde6e3b, mentor-looks-r6.js). */
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }

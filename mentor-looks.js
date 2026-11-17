@@ -1,21 +1,4 @@
-// ===== SWITCHING BACK to round 6 (chunk U7, 3 Nov 2026) =====
-// Round 6's looks are kept, unchanged, in mentor-looks-r6.js (not loaded and not cached). To bring them back:
-//   1. index.html: point the script tag at mentor-looks-r6.js instead of mentor-looks.js.
-//   2. sw.js: put mentor-looks-r6.js in the cache list in place of mentor-looks.js.
-//   3. index.html: put back round 6's futuristic neutral string (MENTOR_LOOKS.futuristic.neutral in mentor-looks-r6.js) as the inline
-//      drawing inside #mentor-button.
-//   4. app.js, buildMentorOrb: put back the window crop, svg.setAttribute("viewBox", "25 25 150 150"); (and 150 as the fallback
-//      drawing width in mentorMoveFrames).
-//   5. index.html, "LR1:": put back the loading ring's five strokes from the stage colour set:
-//        .mo-load .lr-s0 { stroke: var(--mentor-s0); ... }   .mo-load .lr-s1 { stroke: var(--mentor-s1); ... }
-//        .mo-load .lr-s2 { stroke: var(--mentor-s2); ... }   .mo-load .lr-s3 { stroke: var(--mentor-s3); ... }
-//        .mo-load .lr-s4 { stroke: var(--mentor-s4); ... }   (the dash lengths and offsets stay as they are)
-//   6. index.html, by the "U7:" note in the Mentor window's styles: put back the window orb's own float,
-//        .mp-orb { animation: mp-float 4s ease-in-out infinite; }   (round 6 has no bob of its own; the mp-float keyframes are still there)
-//   7. Bump the version (the ?v= numbers, sw.js VERSION, APP_VERSION and an Updates entry).
-// The --mentor-t1 to --mentor-t3 lines in index.html can stay: round 6 ignores them. app.js still sets --mentor-s0 to --mentor-s4 (applyPalette).
-// The ring turn in app.js (buildMentorOrb sets the start of .ml-orbit's turn) does nothing for round 6, which has no .ml-orbit.
-//
+// Round 6 of these looks is in git commit dde6e3b (file mentor-looks-r6.js); the file itself was deleted as unused.
 // ===== mentor-looks.js: the Mentor's three looks and five states (chunk U6, round 7, 3 Nov 2026) =====
 // This file is only data. It draws nothing until the app puts a string on screen, talks to nothing and stores nothing.
 // Round 7: the three looks are James's own drawings, redrawn as compact inline SVG.

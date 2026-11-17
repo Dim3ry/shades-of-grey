@@ -20,7 +20,7 @@ Use it when a chunk splits cleanly by page (for example "check every page at 128
 
 ## Versions
 One version bump per chunk that changes the app. A bump means:
-- the ?v= number on every script tag in index.html (ten at v106; count them, do not trust this number), and the comments that name it, including the example "app.js?vNN" in the comment above APP_VERSION in app.js
+- the ?v= number on every script tag in index.html (13 at v172: count them, do not trust this number), and the comments that name it, including the example "app.js?vNN" in the comment above APP_VERSION in app.js
 - VERSION in sw.js
 - APP_VERSION in app.js
 - one new entry at the top of CHANGELOG in app.js, in plain words
@@ -37,11 +37,14 @@ Docs-only changes need no bump.
 - Growth guard (full runs): tests/time_budget.json holds each file's recorded time. A file over its recorded time plus 25% or over 120 s, a new file over 30 s or 60 checks, or a whole run over 15 minutes prints a TIME WARNINGS block and still passes. A file over 180 s, a new file over 45 s or a whole run over 18 minutes fails. These numbers are for the machine the budget was recorded on (4 cores): every full run first times a small fixed CPU job and scales the per-file and whole-run limits by how much slower (or, down to 0.8, faster) this machine is, and the whole-run limits also by the number of cores (shown on the first line of the output; tests/test_budget_scaling.py checks this). The budget file has no per-file exceptions now (fail_overrides is empty); add one only on purpose, with a reason. Rewrite the budget only on purpose, after a clean full run: python3 tests/run_all.py --update-budget. A new test file that mentions APP_VERSION, sw.js, ?v=, CHANGELOG, DATA_VERSION or git diff also fails (source lint).
 - Changing recipe, scheme or tip content on purpose (the prompt says to): run with CONTENT_CHANGE_OK=1. Changing the security policy on purpose: update tests/csp_baseline.txt in the same chunk.
 - No test is a known failure now (test_colour_engine and test_v21_7 pass). Report any failure plainly. Never skip or weaken a test to get green.
+- Load flakes: on a busy machine a few files can fail in a full run and pass when run alone. Run with --rerun-failed (python3 tests/run_all.py --rerun-failed): each failed file is run again alone and reported as "failed in the run, passed alone" (a flake) or still failing (real). Flake or not, say which in the report.
+- Known environment failures: test_v126_ds2 and test_v47 fail in the cloud session container for reasons of that machine, not the app (say so in the report; do not skip them).
+- The tests load http://localhost:8765, so a server must be running in the folder under test (python3 -m http.server 8765 from the repo root) before any test file is run on its own. run_all.py starts its own.
 - When a test checked old wording, update it and say why in the test.
 - A chunk's new test covers only its new behaviour. It never checks the app version, sw.js VERSION, script tags, the Updates entry, DATA_VERSION, file lists, storage names, the security policy or "content files unchanged". tests/test_version_plumbing.py does that once, using tests/version_helpers.py (current(), at_least("vN"), newer_than("vN"), changelog_versions(page), has_entry(page, "vN"), data_version()).
 - Do not copy a "still works" check from an older test. If older behaviour changes, update the older test in the same chunk and say so.
 - Keep a new test file under 45 s and 60 checks. The runner warns above 30 s and fails above 45 s. A loop over every paint, recipe or tip needs a reason; sample 3 unless the point is the whole list.
-- Some test files are imported by other tests as helper libraries (v27, v31, v35, v37b, v38, v39, v41, v42, v44, v51, v52, v53, v54). Never delete them; if their checks go, keep the helper functions or move them to tests/common.py first.
+- Some test files are imported by other tests as helper libraries (v24, v27, v31, v35, v37b, v38, v39, v41, v42, v44, v51, v52, v53, v54, v71, v127_f2, v124_th3, v114_back_arrow, and html_safety; v24 alone is imported by 14 tests). Never delete them; if their checks go, keep the helper functions or move them to tests/common.py first.
 - The Cloudflare "Workers Builds" check fails on every pull request. Ignore it. Check main's build after each merge.
 - Check on a 390 px and a 360 px wide phone screen, dark and light. No sideways scroll. Tap targets 44 px or more.
 
