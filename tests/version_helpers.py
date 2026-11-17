@@ -10,6 +10,8 @@ that needs to know the version uses these helpers. A normal chunk's test never c
     newer_than("v69")    True when the app is newer than v69
     changelog_versions(page)   every version in the Updates list, newest first (needs an open app page)
     has_entry(page, "v69")     True when the Updates list has an entry for that version
+    changelog_entries(page)    (SZ1) every Updates entry as the app holds it ({version, date, changes}), newest first
+    changelog_source()         (SZ1) the text of changelog.js, where the Updates list lives
     data_version()       the DATA_VERSION number written in app.js
     app_js_with_data_version(n)   (DV3) the text of app.js with that number set to n, for serving an "older open copy" in a test
 """
@@ -40,8 +42,18 @@ def newer_than(version):
     return parse(current()) > parse(version)
 
 
+# SZ1 (v173): the Updates list moved out of app.js into changelog.js (loaded just before app.js). These helpers read the list from the
+# open page (where it is the same top-level name as before), so they need no change when it moves; only changelog_source() reads a file.
 def changelog_versions(page):
     return page.evaluate("CHANGELOG.map(c => c.version)")
+
+
+def changelog_entries(page):
+    return page.evaluate("CHANGELOG")
+
+
+def changelog_source():
+    return read("changelog.js")
 
 
 def has_entry(page, version):

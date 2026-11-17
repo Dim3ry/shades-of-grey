@@ -32,8 +32,9 @@ def source(name):
         return f.read()
 
 def updates_text(app):
-    """Every Updates entry, as written in app.js (the list sits between UPDATES_SHOWN and renderUpdates)."""
-    block = app[app.index("const UPDATES_SHOWN"):app.index("function renderUpdates")]
+    """Every Updates entry, as written in changelog.js (SZ1, v173: the list moved there from app.js; the strings that still sit in app.js
+    between UPDATES_SHOWN and renderUpdates are kept in the scan as before)."""
+    block = app[app.index("const UPDATES_SHOWN"):app.index("function renderUpdates")] + source("changelog.js")
     return " ".join(re.findall(r'"((?:[^"\\]|\\.)*)"', block))
 
 # Every text a person can see on the page (hidden parts included, as Help topics open), and every hint, label and title.

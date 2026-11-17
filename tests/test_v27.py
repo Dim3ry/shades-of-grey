@@ -395,7 +395,8 @@ def main():
               all(w in readme for w in ["GoatCounter", "no cookies", "one address", "Settings → Counting visits", "Help → Privacy"]), readme[:900])
         check("README still has the unofficial and copyright lines", "Unofficial fan-made app" in readme and "All rights reserved" in readme)
         start = app.find("v27: COUNTING VISITS")
-        end = app.find("const CHANGELOG = [")
+        # SZ1 (v173): the CHANGELOG list now lives in changelog.js, so "const CHANGELOG" is no longer in app.js; its banner comment (just before the old place) marks the same end of this section.
+        end = app.find("// ================= THE CHANGELOG (the Updates tab's list)")
         mine = app[start:end]
         check("the new code was found", 0 < start < end and len(mine) > 500, (start, end))
         code_only = "\n".join(l for l in mine.splitlines() if not l.strip().startswith("//"))

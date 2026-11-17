@@ -251,7 +251,9 @@ def main():
               all(f'foldCard(document.getElementById("{c}"), "{k}");' in app for c, k in (("appearance-themes-card", "appearance-themes"), ("import-card", "import"), ("your-data-card", "your-data"))))
         check("no new function was added for the folds (the v36 and v37 scanned code is untouched)", "function foldStages" not in app and "function foldImport" not in app)
         check("the new CSS adds no colour (only the opacity changed)", "button:disabled { opacity: 0.55; cursor: default; }" in html)
-        check("no em dash in the v54 Updates entry or the new Help words", "—" not in app[app.index('{ version: "v54"'):app.index('{ version: "v53"')] and "fold shut the same way" in html)
+        # SZ1 (v173): the Updates list moved from app.js to changelog.js, so the v54 entry is read from there.
+        log = read("changelog.js")
+        check("no em dash in the v54 Updates entry or the new Help words", "—" not in log[log.index('{ version: "v54"'):log.index('{ version: "v53"')] and "fold shut the same way" in html)
 
         # ---------- 7. No errors ----------
         print("\n--- 7. No errors ---")
