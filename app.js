@@ -1851,15 +1851,6 @@
       const off = new Set(cleanBrandsOff(settings.brandsOff));
       searchedPaints = off.size ? KNOWN_PAINTS.filter(k => !off.has(k.brand)) : KNOWN_PAINTS;
     }
-    // CL1: one Tab loop for every pop-up. Tab on the last stop goes to the first, Shift+Tab on the first goes to the last, and
-    // a focus that is outside the list starts at the first (or the last, going back). Does nothing if there is nothing to stop on.
-    function wrapTab(event, stops) {
-      if (!stops.length) return;
-      const at = stops.indexOf(document.activeElement);
-      const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
-      event.preventDefault();
-      stops[next].focus();
-    }
     // Every Vallejo code in a bit of text (a label can show more than one number).
     // The camera often reads 0 as the letter O and 1 as l or I ("72.O21"), so those count as digits
     // in the last three places, as long as at least one real digit is there too.
@@ -9873,6 +9864,15 @@
       if (focusBeforeViewer && focusBeforeViewer.isConnected) focusBeforeViewer.focus();
     }
     document.getElementById("viewer-close").addEventListener("click", closeViewer);
+    // CL1: one Tab loop for every pop-up. Tab on the last stop goes to the first, Shift+Tab on the first goes to the last, and
+    // a focus that is outside the list starts at the first (or the last, going back). Does nothing if there is nothing to stop on.
+    function wrapTab(event, stops) {
+      if (!stops.length) return;
+      const at = stops.indexOf(document.activeElement);
+      const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+      event.preventDefault();
+      stops[next].focus();
+    }
     // DS2: the viewer is a pop-up ("modal"), so Tab and Shift+Tab go round its own buttons and boxes only, as in the question box.
     // Before DS2, Tab went on to the save banner and the menu bar behind it. A question asked from the viewer (Delete photo?) keeps
     // its own Tab handling.
