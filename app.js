@@ -3050,7 +3050,7 @@
       if (!el) {
         el = document.createElement("span");
         el.id = "opens-site";
-        el.className = "sr-only";
+        el.hidden = true;   // FX7: display:none, so page-text readers no longer see it on every page; aria-describedby still reads a hidden line
         el.textContent = "Opens the shop's website";
         document.body.appendChild(el);
       }
@@ -10569,7 +10569,7 @@
     const toastText = document.getElementById("toast-text");
     const toastUndo = document.getElementById("toast-undo");
     let toastTimer;
-    const TOAST_MOVE_GRACE_MS = 2000;   // FX3: a message younger than this survives a screen change (an action that then opens a screen, or taps through one)
+    const TOAST_MOVE_GRACE_MS = 600;   // FX3: a message younger than this survives a screen change (an action that then opens a screen; FX7: 2 s was long enough for a quick tap on another screen to keep an old Undo, so it is 0.6 s)
     let toastShownAt = 0;   // FX3: when the message went up, so leaving a screen can tell a stale one from one just made
     let toastUntil = 0;   // A2: the clock time (ms) the message is due to go, so a frozen timer can't leave it up
     let undoAction = null;
@@ -10579,6 +10579,7 @@
 
     // The button usually says "Undo", but can say something else (e.g. "Back up").
     function showToast(message, undo, buttonLabel, seconds) {
+      if (!String(message == null ? "" : message).trim()) return;   // FX7: a message with no words is never shown (an Undo with nothing to say would be an empty bar)
       if (undo && !seconds && (!buttonLabel || buttonLabel === "Undo")) seconds = UNDO_SECONDS;
       delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
       for (const g of document.querySelectorAll(".toast.lq-ghost")) g.remove();   // FX4: the fading copy of the last message goes at once, so only one message is ever on the page
@@ -18151,7 +18152,7 @@
 
       if (!base) {
         // RS3a: with no paint to choose from the line points at nothing, so it is left out
-        if (all.length) say("Choose a colour above and you get 3 paints that go with it. The parts below do not need one.", "colour-ideas-none");
+        if (all.length) say("Pick a paint in Start from to get 3 that go with it.", "colour-ideas-none");
       } else {
         const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
         const ideas = colourIdeas(null, base.colour, role);
@@ -19536,7 +19537,7 @@
             const tech = document.createElement("span");
             tech.className = "import-tech";
             tech.textContent = step.technique || `${guessTechnique(paints.filter(Boolean)) || "Step"} (auto)`;
-            body.appendChild(tech);
+            body.append(tech, " ");   // FX7: a real space between the step name and the first paint, so copied or read text is "Varnish (auto) 'Ardcoat", not "Varnish (auto)'Ardcoat"
             step.paints.forEach((m, i) => {
               if (i) body.append(" + ");
               const span = document.createElement("span");
@@ -22359,13 +22360,17 @@
         const backupWishes = backupHasWishList ? cleanWishes(parsed.modelWishes).length : 0;
         const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
         const wantedNow = backupHasWishList && wishes().length ? [plural(wishes().length, "Wishlist model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "Wishlist model")] : [];
+        // FX7: Gear and shopping paints come with the recipe book, so they are named too (only when above 0), as units, recipes and Wishlist models are.
+        const shopPaintsIn = (b) => b.paints.filter(p => !isExamplePaint(p) && !isMadeUpPaint(p) && paintStatus(p) === "wishlist").length;
+        const bookExtras = (b, gearCount) => [gearCount ? plural(gearCount, "Gear item") : "", shopPaintsIn(b) ? plural(shopPaintsIn(b), "shopping paint") : ""].filter(Boolean);
+        const extrasNow = backupBook ? bookExtras(book, gearItems().length) : [], extrasThen = backupBook ? bookExtras(backupBook, (backupBook.gear || []).filter(g => g.bought !== true).length) : [];
         const question = (!unitsToo
             ? (backupBook && hasRecipes
-              ? `Replace your ${listOf([plural(book.recipes.length, "recipe"), ...wantedNow])} with ${listOf([plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup? (Your units stay as they are.)`
+              ? `Replace your ${listOf([plural(book.recipes.length, "recipe"), ...extrasNow, ...wantedNow])} with ${listOf([plural(backupBook.recipes.length, "recipe"), ...extrasThen, ...wantedThen])} from the backup? (Your units stay as they are.)`
               : `Replace your ${plural(wishes().length, "Wishlist model")} with ${plural(backupWishes, "Wishlist model")} from the backup? (Your units and recipes stay as they are.)`)
             : backupBook
-            ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...wantedNow])} with ` +
-              `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup?`
+            ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...extrasNow, ...wantedNow])} with ` +
+              `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...extrasThen, ...wantedThen])} from the backup?`
             : `Replace your current ${listOf([plural(models.length, "unit"), ...wantedNow])} with ${backupWishes ? listOf([plural(restored.length, "unit"), ...wantedThen]) : restored.length} from the backup? (Your recipes stay as they are.)`)
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.

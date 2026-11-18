@@ -132,8 +132,9 @@ def main():
         fc.value.set_files(path)
         page.wait_for_selector("#dialog-yes", state="visible")
         question = page.text_content("#dialog-backdrop")
-        check("Restore asks first, naming 3 units, 2 recipes and 1 photo",
-              "with 3 units and 2 recipes from the backup" in question and "It includes 1 photo." in question, question)
+        # FX7: the question also names the backup's shopping paints (and Gear) when there are some; this backup's recipes hold 1 Wishlist paint.
+        check("Restore asks first, naming 3 units, 2 recipes, 1 shopping paint and 1 photo",
+              "with 3 units, 2 recipes and 1 shopping paint from the backup" in question and "It includes 1 photo." in question, question)
         page.click("#dialog-yes")
         page.wait_for_function("() => document.getElementById('toast-text').textContent.startsWith('Backup restored')")
         check("…and says Backup restored", page.text_content("#toast-text") == "Backup restored", page.text_content("#toast-text"))

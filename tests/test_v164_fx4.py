@@ -40,10 +40,14 @@ def main():
             page.click('nav button[data-tab="units"]'); t.quiet(page)
             page.click('#models-seg button[data-mview="wishes"]'); t.quiet(page)
             page.click("#wish-list >> text=Zed Riders"); t.quiet(page)
-            page.click(".w-delete"); t.quiet(page)
-            check("the Removed message is up with Undo", toast(page)["text"] == "Removed Zed Riders" and page.is_visible("#toast-undo"), toast(page))
-            page.click('#models-seg button[data-mview="models"]'); t.quiet(page)
-            check("a message under 2 seconds old survives a tap on a screen row", toast(page)["text"] == "Removed Zed Riders", toast(page))
+            page.click(".w-delete")
+            # FX7: the grace for a message made in the same moment as a move is now 0.6 s (was 2 s: a quick tap on another screen kept an old Undo).
+            # So the message check and the tap on the row happen in ONE step here, well inside it, whatever the machine's load.
+            step = page.evaluate("""() => { const before = document.getElementById('toast-text').textContent, undo = !document.getElementById('toast-undo').classList.contains('hidden');
+                document.querySelector('#models-seg button[data-mview="models"]').click(); return [before, undo]; }""")
+            t.quiet(page)
+            check("the Removed message is up with Undo", step == ["Removed Zed Riders", True], step)
+            check("a message under 0.6 seconds old survives a tap on a screen row", toast(page)["text"] == "Removed Zed Riders", toast(page))
             page.wait_for_timeout(2300)
             page.click('#models-seg button[data-mview="wishes"]'); t.quiet(page)
             check("an older message goes with a tap on the Models/Wanted row", toast(page) == {"hidden": True, "text": ""}, toast(page))
