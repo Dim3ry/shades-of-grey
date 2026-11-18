@@ -6,6 +6,10 @@
 
     // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
+      { version: "v174", date: "18 Nov 2026", changes: [
+        "Shopping: the models tab is now Wishlist models, each tab says what fills it, Remove no longer removes two items on a double tap, and Add model keeps what you typed. Tick boxes are easier to hit and old Undo messages clear.",
+        "Fixes and tidying.",
+      ] },
       { version: "v173", date: "17 Nov 2026", changes: [
         "Fixes and tidying.",
         "The app's code file is smaller, so it should start a little quicker.",
