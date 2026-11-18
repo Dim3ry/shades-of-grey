@@ -146,10 +146,13 @@ def main():
             e.recipe_view(page, view)
             press_examples(page, "clear")
             check(f"from {view}: the message says so (AB9: no count)", e.toast(page)["text"] == "Examples cleared.", e.toast(page))
-            check(f"from {view}: the example units are gone too, and the card is on no tab",
-                  page.evaluate("() => models.length") == 0 and cards_seen(page) == [], cards_seen(page))
+            # FX7: a message older than 0.6 s now goes when you tap another screen (it was 2 s), and cards_seen() taps through every tab.
+            # So the Undo is pressed first, straight after the clear, and the card check below clears again (no Undo needed there).
+            check(f"from {view}: the example units are gone too", page.evaluate("() => models.length") == 0, page.evaluate("() => models.length"))
             undo(page)
             check(f"from {view}: Undo brings it all back", counts(page) == start, counts(page))
+            press_examples(page, "clear")
+            check(f"from {view}: cleared again, the card is on no tab", cards_seen(page) == [], cards_seen(page))
         e.fresh(page)
         e.main_tab(page, "units")
         tap(page, "#examples-card .clear-examples")

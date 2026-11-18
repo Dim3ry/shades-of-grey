@@ -2752,7 +2752,7 @@
       head.type = "button";
       head.className = "plain-button shop-suggest-head";
       head.setAttribute("aria-expanded", String(suggestedOpen));
-      head.textContent = "Suggested";
+      head.textContent = "Suggested (includes Running low and Empty paints)";   // SHP5
       const list = document.createElement("ul");
       list.className = "shop-suggest-list";   // not "shop-list": that is the list itself
       list.hidden = !suggestedOpen;
@@ -3050,7 +3050,7 @@
       if (!el) {
         el = document.createElement("span");
         el.id = "opens-site";
-        el.className = "sr-only";
+        el.hidden = true;   // FX7: display:none, so page-text readers no longer see it on every page; aria-describedby still reads a hidden line
         el.textContent = "Opens the shop's website";
         document.body.appendChild(el);
       }
@@ -3223,7 +3223,7 @@
     // The screen is "shopping" in views (settings.tab, the address #shopping); under the Painting piece of the menu bar (barOf). Everything
     // typed or pasted is set with textContent, so it always shows as plain text. render() redraws it while it is open (DRAWN_TABS).
     const SHOP_TABS = [{ id: "paints", name: "Paints", panel: "shop-panel" }, { id: "gear", name: "Gear", panel: "shop-gear-panel" },
-                       { id: "wishlist", name: "Wishlist", panel: "shop-wish-panel" }];
+                       { id: "wishlist", name: "Wishlist models", panel: "shop-wish-panel" }];   // SHP5: not just "Wishlist" (that is also a paint status and the Models switch)
     let shopTab = "paints";      // the open tab (kept while the app is open)
     let shoppingFrom = null;     // the screen the Shopping button was tapped on ("launch" = the start page), so Back returns there
     const shopSeg = document.getElementById("shop-seg");
@@ -3248,6 +3248,7 @@
         if (t.id !== shopTab) el.replaceChildren();   // a tab that is not showing is empty, so nothing stale (or a second #buy-bar) is left in it
       }
       showShopLinksChoice();
+      fillDraftCard("wish", !shopAddSlot.firstChild);   // SHP5: a kept unfinished model, offered at the top of Shopping
       shopAddBtn.textContent = SHOP_ADD_WORDS[shopTab];   // SHP3
       if (shopAddTab !== shopTab) { shopAddTab = shopTab; closeShopAdd(); }
       if (shopTab === "paints") renderShopPanel();
@@ -3409,7 +3410,7 @@
     shopAddBtn.addEventListener("click", () => {
       if (shopAddSlot.firstChild) { closeShopAdd(); return; }   // a second tap closes it
       shopAddBtn.setAttribute("aria-expanded", "true");
-      if (shopTab === "wishlist") { openWishForm(null, shopAddSlot); return; }   // the Models add form; Save redraws this tab (commit)
+      if (shopTab === "wishlist") { if (draftWaiting("wish")) { shopAddBtn.setAttribute("aria-expanded", "false"); return; } openWishForm(null, shopAddSlot); return; }   // the Models add form; Save redraws this tab (commit)
       const built = shopTab === "gear" ? buildShopAddGear() : buildShopAddPaints();
       shopAddSlot.appendChild(built.box);
       built.focus.focus();
@@ -3452,8 +3453,14 @@
       const head = document.createElement("div");
       head.className = "shop-head";
       card.append(head);
-      if (!any) card.append(shopEmptyLine("Paints you add or mark Wishlist appear here."));
-      else if (shopLinksOn()) {
+      if (!any) card.append(shopEmptyLine("Paints marked Wishlist appear here. Running low and Empty paints are offered under Suggested."));   // SHP5
+      else {
+        const line = document.createElement("p");   // SHP5: what fills this tab (only with paints on it; the empty line says it otherwise)
+        line.className = "hint shop-fills";
+        line.textContent = "Paints marked Wishlist are listed here.";
+        head.append(line);
+      }
+      if (any && shopLinksOn()) {
         // v52: the explanation of how the shop bar works sits behind one More info
         const shops = document.createElement("p");
         shops.className = "hint";
@@ -3506,8 +3513,8 @@
             remove.type = "button";
             remove.className = "plain-button shop-remove";
             remove.textContent = "Remove";
-            labelWithName(remove, "", nameEl);   // the button's name is "Remove" then the paint's name
-            remove.addEventListener("click", () => removeFromShoppingList(i.paint.id));
+            nameShopButton(remove, "Remove", nameEl);   // SHP5: "Remove, Paint name"
+            remove.addEventListener("click", () => { if (removeTapIsRepeat("paints")) return; removeFromShoppingList(i.paint.id); });
             li.append(tick, text, remove);
             list.appendChild(li);
           }
@@ -3542,8 +3549,23 @@
         tick.setAttribute("aria-checked", "true");
         setTimeout(done, SHOP_TICK_PAUSE);
       });
-      labelWithName(tick, "Bought", nameEl);   // "Bought" then the name
+      nameShopButton(tick, "Bought", nameEl);   // SHP5: "Bought, Name"
       return tick;
+    }
+    // SHP5 / v55 F12: no item name in an aria-label. The button is named by aria-labelledby: its own words (or, with none, the action word kept in its
+    // aria-label, as the Bought tick has) then the visible name element, so each row reads "Remove Name" / "Bought Name" and no two rows are alike.
+    function nameShopButton(el, action, nameEl) {
+      labelWithName(el, el.textContent.trim() ? "" : action, nameEl);
+    }
+    // SHP5: after a Remove the next row slides under the finger, so a quick second tap used to remove that one too (300 became 298).
+    // A second Remove tap on the same list within 600 ms is ignored. (The Undo toast still brings back the one that was removed.)
+    const REMOVE_REPEAT_MS = 600;
+    const lastRemoveTap = { paints: -Infinity, gear: -Infinity };
+    function removeTapIsRepeat(list) {
+      const now = performance.now();
+      if (now - lastRemoveTap[list] < REMOVE_REPEAT_MS) return true;
+      lastRemoveTap[list] = now;
+      return false;
     }
 
     // The Gear tab (L1: Gear on the list): one row per item with the tick box, the name and where it came from, and Remove, built like a paint's row
@@ -3571,8 +3593,8 @@
         remove.type = "button";
         remove.className = "plain-button shop-remove";
         remove.textContent = "Remove";
-        labelWithName(remove, "", nameEl);
-        remove.addEventListener("click", () => removeGear(g.id));
+        nameShopButton(remove, "Remove", nameEl);   // SHP5
+        remove.addEventListener("click", () => { if (removeTapIsRepeat("gear")) return; removeGear(g.id); });
         li.append(tick, text, remove);
         const find = buildFind(g.name, nameEl);   // SHP4: the product type only
         if (find) li.appendChild(find);
@@ -3642,6 +3664,10 @@
       const all = wishes();
       const card = document.createElement("div");
       card.className = "card";
+      const note = document.createElement("p");   // SHP5: why the Shopping button's number leaves these out
+      note.className = "hint shop-fills";
+      note.textContent = BASKET_NOTE;
+      card.append(note);
       if (!all.length) card.append(shopEmptyLine("Models you add here or in Models appear here."));
       else {
         const list = document.createElement("ul");
@@ -3721,6 +3747,8 @@
     // pill gives one small pop (skipped for people who ask their phone for less motion).
     const basketButton = document.getElementById("basket-button");
     let basketShown = -1;
+    // SHP5: the Shopping button counts paints and Gear only. A tooltip and an accessible description say so (Wishlist models are not in the number).
+    const BASKET_NOTE = "Models are not counted in the button.";
     function updateBasket() {
       const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
       const n = paintsN + gearN;
@@ -3752,6 +3780,15 @@
           basketButton.classList.add("pop");
         }
         basketShown = n;
+      }
+      basketButton.title = "Shopping. " + BASKET_NOTE;
+      if (!document.getElementById("basket-note")) {
+        const note = document.createElement("span");
+        note.id = "basket-note";
+        note.className = "sr-only";
+        note.textContent = BASKET_NOTE;
+        basketButton.after(note);
+        basketButton.setAttribute("aria-describedby", "basket-note");
       }
       basketButton.setAttribute("aria-label", n === 0 ? "Shopping, empty"
         : `Shopping, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}`);
@@ -10532,7 +10569,7 @@
     const toastText = document.getElementById("toast-text");
     const toastUndo = document.getElementById("toast-undo");
     let toastTimer;
-    const TOAST_MOVE_GRACE_MS = 2000;   // FX3: a message younger than this survives a screen change (an action that then opens a screen, or taps through one)
+    const TOAST_MOVE_GRACE_MS = 600;   // FX3: a message younger than this survives a screen change (an action that then opens a screen; FX7: 2 s was long enough for a quick tap on another screen to keep an old Undo, so it is 0.6 s)
     let toastShownAt = 0;   // FX3: when the message went up, so leaving a screen can tell a stale one from one just made
     let toastUntil = 0;   // A2: the clock time (ms) the message is due to go, so a frozen timer can't leave it up
     let undoAction = null;
@@ -10542,6 +10579,7 @@
 
     // The button usually says "Undo", but can say something else (e.g. "Back up").
     function showToast(message, undo, buttonLabel, seconds) {
+      if (!String(message == null ? "" : message).trim()) return;   // FX7: a message with no words is never shown (an Undo with nothing to say would be an empty bar)
       if (undo && !seconds && (!buttonLabel || buttonLabel === "Undo")) seconds = UNDO_SECONDS;
       delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
       for (const g of document.querySelectorAll(".toast.lq-ghost")) g.remove();   // FX4: the fading copy of the last message goes at once, so only one message is ever on the page
@@ -11036,6 +11074,7 @@
       const form = document.createElement("form");
       form.className = "card wish-form";
       form.setAttribute("aria-label", wish ? "Edit model" : "Add model");
+      if (!wish) form.dataset.new = "1";   // SHP5: only a new model is kept as a draft
       // props are plain element properties; the name used by screen readers and the list for suggestions are set with fixed attribute names
       const make = (tag, cls, props, text, label) => {
         const e = document.createElement(tag);
@@ -11101,7 +11140,7 @@
       (slot || wishFormSlot).appendChild(form);
       q(".w-name").focus();
     }
-    document.getElementById("wish-add").addEventListener("click", () => openWishForm(null));
+    document.getElementById("wish-add").addEventListener("click", () => { if (draftWaiting("wish")) return; openWishForm(null); });   // SHP5: a kept unfinished model is asked about first
 
     // ----- the Sort button and the "Sort models" sheet (a bottom sheet through showDialog) -----
     const sortButton = document.getElementById("toggle-sort");
@@ -18113,7 +18152,7 @@
 
       if (!base) {
         // RS3a: with no paint to choose from the line points at nothing, so it is left out
-        if (all.length) say("Choose a colour above and you get 3 paints that go with it. The parts below do not need one.", "colour-ideas-none");
+        if (all.length) say("Pick a paint in Start from to get 3 that go with it.", "colour-ideas-none");
       } else {
         const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
         const ideas = colourIdeas(null, base.colour, role);
@@ -19498,7 +19537,7 @@
             const tech = document.createElement("span");
             tech.className = "import-tech";
             tech.textContent = step.technique || `${guessTechnique(paints.filter(Boolean)) || "Step"} (auto)`;
-            body.appendChild(tech);
+            body.append(tech, " ");   // FX7: a real space between the step name and the first paint, so copied or read text is "Varnish (auto) 'Ardcoat", not "Varnish (auto)'Ardcoat"
             step.paints.forEach((m, i) => {
               if (i) body.append(" + ");
               const span = document.createElement("span");
@@ -22321,13 +22360,17 @@
         const backupWishes = backupHasWishList ? cleanWishes(parsed.modelWishes).length : 0;
         const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
         const wantedNow = backupHasWishList && wishes().length ? [plural(wishes().length, "Wishlist model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "Wishlist model")] : [];
+        // FX7: Gear and shopping paints come with the recipe book, so they are named too (only when above 0), as units, recipes and Wishlist models are.
+        const shopPaintsIn = (b) => b.paints.filter(p => !isExamplePaint(p) && !isMadeUpPaint(p) && paintStatus(p) === "wishlist").length;
+        const bookExtras = (b, gearCount) => [gearCount ? plural(gearCount, "Gear item") : "", shopPaintsIn(b) ? plural(shopPaintsIn(b), "shopping paint") : ""].filter(Boolean);
+        const extrasNow = backupBook ? bookExtras(book, gearItems().length) : [], extrasThen = backupBook ? bookExtras(backupBook, (backupBook.gear || []).filter(g => g.bought !== true).length) : [];
         const question = (!unitsToo
             ? (backupBook && hasRecipes
-              ? `Replace your ${listOf([plural(book.recipes.length, "recipe"), ...wantedNow])} with ${listOf([plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup? (Your units stay as they are.)`
+              ? `Replace your ${listOf([plural(book.recipes.length, "recipe"), ...extrasNow, ...wantedNow])} with ${listOf([plural(backupBook.recipes.length, "recipe"), ...extrasThen, ...wantedThen])} from the backup? (Your units stay as they are.)`
               : `Replace your ${plural(wishes().length, "Wishlist model")} with ${plural(backupWishes, "Wishlist model")} from the backup? (Your units and recipes stay as they are.)`)
             : backupBook
-            ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...wantedNow])} with ` +
-              `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup?`
+            ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...extrasNow, ...wantedNow])} with ` +
+              `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...extrasThen, ...wantedThen])} from the backup?`
             : `Replace your current ${listOf([plural(models.length, "unit"), ...wantedNow])} with ${backupWishes ? listOf([plural(restored.length, "unit"), ...wantedThen]) : restored.length} from the backup? (Your recipes stay as they are.)`)
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.
@@ -23645,12 +23688,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=173".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=174".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v173";
+    const APP_VERSION = "v174";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23778,13 +23821,13 @@
     // import, Cancel and "yes, discard") or when you tap Discard and say yes. A discarded draft is gone
     // for good: there is no Undo and nothing brings it back.
     const DRAFTS_KEY = "shades-of-grey-drafts";
-    const DRAFT_KINDS = ["unit", "recipe", "paste"];
+    const DRAFT_KINDS = ["unit", "recipe", "paste", "wish"];   // SHP5: wish = the + Add model form
     const DRAFT_SYNC_MS = 300;        // how long after the last change a draft is written
     const DRAFT_SAFETY_MS = 4000;     // the safety net
     const DRAFT_TEXT_LIMIT = 50000;   // DR1: longest piece of text a draft keeps (was 500,000, which could fill the storage)
     const DRAFT_STEP_NOTE_LIMIT = 2000;   // DR1: one recipe step's note
-    let draftOffers = { unit: null, recipe: null, paste: null };    // kept drafts waiting for an answer
-    const draftWritten = { unit: null, recipe: null, paste: null }; // what THIS window last wrote (null = nothing)
+    let draftOffers = { unit: null, recipe: null, paste: null, wish: null };    // kept drafts waiting for an answer
+    const draftWritten = { unit: null, recipe: null, paste: null, wish: null }; // what THIS window last wrote (null = nothing)
     let draftSyncTimer = null;
 
     function readDraftStore() {
@@ -23831,7 +23874,17 @@
     function livePasteDraft() {
       return importDraft && importDraft.text.trim() ? { text: draftText(importDraft.text) } : null;
     }
-    const LIVE_DRAFTS = { unit: liveUnitDraft, recipe: liveRecipeDraft, paste: livePasteDraft };
+    // SHP5: the + Add model form (Shopping > Wishlist models, or Models > Wishlist). Only a NEW model counts (an edit of a saved one is not a draft),
+    // and only when something is typed. Save, Cancel and Escape remove the form, so syncDrafts then removes the draft too.
+    function liveWishDraft() {
+      const form = document.querySelector("form.wish-form[data-new]");
+      if (!form) return null;
+      const v = (c) => form.querySelector(c).value;
+      const name = v(".w-name"), game = v(".w-game"), faction = v(".w-faction"), note = v(".w-note");
+      if (![name, game, faction, note].some(x => x.trim())) return null;
+      return { name: draftText(name, 80), count: draftText(v(".w-count"), 8), game: draftText(game, 80), faction: draftText(faction, 80), note: draftText(note, WISH_NOTE_MAX) };
+    }
+    const LIVE_DRAFTS = { unit: liveUnitDraft, recipe: liveRecipeDraft, paste: livePasteDraft, wish: liveWishDraft };
 
     // ----- Checking what was kept (it came from storage, so it is checked like any saved data) -----
     const goodDraftColour = (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c) ? c.toLowerCase() : DEFAULT_PAINT_COLOUR;
@@ -23865,7 +23918,12 @@
     function cleanPasteDraft(raw) {
       return raw && typeof raw === "object" && typeof raw.text === "string" && raw.text.trim() ? { text: draftText(raw.text) } : null;
     }
-    const CLEAN_DRAFTS = { unit: cleanUnitDraft, recipe: cleanRecipeDraft, paste: cleanPasteDraft };
+    function cleanWishDraft(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const d = { name: draftText(raw.name, 80), count: draftText(raw.count, 8) || "1", game: draftText(raw.game, 80), faction: draftText(raw.faction, 80), note: draftText(raw.note, WISH_NOTE_MAX) };
+      return [d.name, d.game, d.faction, d.note].some(x => x.trim()) ? d : null;
+    }
+    const CLEAN_DRAFTS = { unit: cleanUnitDraft, recipe: cleanRecipeDraft, paste: cleanPasteDraft, wish: cleanWishDraft };
 
     // ----- Writing drafts down -----
     function syncDrafts() {
@@ -23911,10 +23969,11 @@
     }
 
     // ----- The cards and what their buttons do -----
-    const DRAFT_NAMES = { unit: "unit", recipe: "recipe", paste: "pasted recipe notes" };
+    const DRAFT_NAMES = { unit: "unit", recipe: "recipe", paste: "pasted recipe notes", wish: "model" };
     function draftCardLine(kind, kept) {
       const short = (t) => { const s = String(t).trim().replace(/\s+/g, " "); return s.length > 60 ? s.slice(0, 57) + "…" : s; };
       if (kind === "unit") return `You hadn't finished adding “${short(kept.name)}”.`;
+      if (kind === "wish") return kept.name.trim() ? `You hadn't finished adding “${short(kept.name)}”.` : "You hadn't finished adding a model.";
       if (kind === "recipe") {
         const name = kept.name.trim();
         const was = kept.id !== null && recipeById(kept.id) ? "changes to" : "";
@@ -23973,6 +24032,14 @@
         renderUnits();
         form.scrollIntoView({ block: "start" });
         nameInput.focus({ preventScroll: true });
+      } else if (kind === "wish") {
+        openShopping("wishlist");
+        shopAddBtn.setAttribute("aria-expanded", "true");
+        openWishForm(null, shopAddSlot);
+        const f = shopAddSlot.querySelector("form.wish-form");
+        f.querySelector(".w-name").value = kept.name; f.querySelector(".w-count").value = kept.count;
+        f.querySelector(".w-game").value = kept.game; f.querySelector(".w-faction").value = kept.faction; f.querySelector(".w-note").value = kept.note;
+        renderShopping();   // the card goes (the offer is answered)
       } else if (kind === "recipe") {
         const d = kept;
         const existing = d.id !== null ? recipeById(d.id) : null;
@@ -24007,6 +24074,7 @@
         writeDraftStore(store);
         renderUnits();
         renderRecipes();
+        if (kind === "wish") renderShopping();   // SHP5
       }, { danger: true, yes: "Discard", no: "Keep it" });
     }
     // Starting a new draft while an old one waits would quietly replace it, so the app asks first.
@@ -24025,7 +24093,7 @@
         });
       return true;
     }
-    const draftNotNow = { unit: false, recipe: false, paste: false };   // UX1: true while "Not now" starts the new one
+    const draftNotNow = { unit: false, recipe: false, paste: false, wish: false };   // UX1: true while "Not now" starts the new one
     loadKeptDrafts();
 
     // ================= v27: COUNTING VISITS (anonymous, no cookies) =================
