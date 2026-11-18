@@ -3552,10 +3552,10 @@
       nameShopButton(tick, "Bought", nameEl);   // SHP5: "Bought, Name"
       return tick;
     }
-    // SHP5: the visible words stay ("Remove"); the accessible name is the action, a comma, then the item (labelWithName gave one run-on string).
+    // SHP5 / v55 F12: no item name in an aria-label. The button is named by aria-labelledby: its own words (or, with none, the action word kept in its
+    // aria-label, as the Bought tick has) then the visible name element, so each row reads "Remove Name" / "Bought Name" and no two rows are alike.
     function nameShopButton(el, action, nameEl) {
-      el.removeAttribute("aria-labelledby");
-      el.setAttribute("aria-label", `${action}, ${nameEl.textContent.trim()}`);
+      labelWithName(el, el.textContent.trim() ? "" : action, nameEl);
     }
     // SHP5: after a Remove the next row slides under the finger, so a quick second tap used to remove that one too (300 became 298).
     // A second Remove tap on the same list within 600 ms is ignored. (The Undo toast still brings back the one that was removed.)

@@ -147,9 +147,10 @@ def main():
         check("ticking it in Settings ticks it here, and the Buy these bar is back", sw.is_checked() and page.locator("#shop-panel .buy-bar").count() == 1)
 
         print("\n--- 7. Back, and the Bought tick's name ---")
-        # SHP5: the name is now a plain aria-label, "Bought, Name" (it was a run-on aria-labelledby list)
-        name = page.locator("#shop-panel .shop-tick").first.get_attribute("aria-label")
-        check("the Bought tick is named Bought plus the paint", name.startswith("Bought, ") and ("Alpha Blue" in name or "Beta Red" in name), name)
+        label = page.locator("#shop-panel .shop-tick").first.get_attribute("aria-labelledby")
+        name = page.evaluate("""() => { const t = document.querySelector('#shop-panel .shop-tick');
+            return t.getAttribute('aria-labelledby').split(' ').map(id => document.getElementById(id)).map(e => e === t ? t.getAttribute('aria-label') : e.textContent).join(' ').trim(); }""")
+        check("the Bought tick is named Bought plus the paint", name.startswith("Bought ") and ("Alpha Blue" in name or "Beta Red" in name), name)
         page.click('.tabs button[data-tab="units"]')
         page.wait_for_timeout(200)
         page.click("#basket-button")
