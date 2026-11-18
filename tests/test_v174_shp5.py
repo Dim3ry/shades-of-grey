@@ -2,7 +2,7 @@
 
 New behaviour only:
 1. The models tab is "Wishlist models"; the Paints tab says what fills it; empty and Suggested wording; the models note and the button description.
-2. Bought and Remove carry the item name ("Remove, Name") on Paints and Gear rows.
+2. Bought and Remove are named by the visible item name (aria-labelledby, no name in an aria-label) on Paints and Gear rows.
 3. A real double click on Remove removes one item (300 to 299) on Paints and Gear, and Undo puts it back.
 4. The + Add model draft survives leaving Shopping and a reload, is offered back, and is gone after Save or Cancel.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -22,6 +22,11 @@ SETTINGS = {"tab": "dashboard", "examplesChecked": True}
 BIG = [{"id": i, "brand": "Citadel", "name": f"Paint {i:03d}", "colour": "#3366aa", "status": "wishlist"} for i in range(1, 301)]
 FEW = [{"id": 1, "brand": "Citadel", "name": "Abaddon Black", "colour": "#111111", "status": "wishlist"},
        {"id": 2, "brand": "Citadel", "name": "Mephiston Red", "colour": "#aa1111", "status": "low"}]
+
+def SPOKEN(page, sel):
+    """What a screen reader says for the first match: the ids in aria-labelledby, in order (the element itself gives its aria-label or its own words)."""
+    return page.evaluate("""(sel) => { const t = document.querySelector(sel);
+        return t.getAttribute("aria-labelledby").split(" ").map(id => { const e = document.getElementById(id); return e === t ? (t.getAttribute("aria-label") || t.textContent) : e.textContent; }).join(" ").replace(/\\s+/g, " ").trim(); }""", sel)
 
 def open_shop(page, tab):
     page.click("#basket-button")
@@ -61,12 +66,15 @@ def main():
         open_shop(page, "paints")
         rm = page.locator("#shop-panel .shop-remove").first
         tk = page.locator("#shop-panel .shop-tick").first
-        check("a paint's Remove and Bought are named with the paint", rm.get_attribute("aria-label") == "Remove, Abaddon Black" and tk.get_attribute("aria-label") == "Bought, Abaddon Black",
-              (rm.get_attribute("aria-label"), tk.get_attribute("aria-label")))
-        check("the visible word is still Remove", rm.inner_text() == "Remove")
+        got = page.evaluate("""() => [".shop-remove", ".shop-tick"].map(c => { const t = document.querySelector("#shop-panel " + c);
+            return t.getAttribute("aria-labelledby").split(" ").map(id => { const e = document.getElementById(id); return e === t ? (t.getAttribute("aria-label") || t.textContent) : e.textContent; }).join(" ").replace(/\\s+/g, " ").trim(); })""")
+        check("a paint's Remove and Bought are named with the paint", got == ["Remove Abaddon Black", "Bought Abaddon Black"], got)
+        check("no paint name sits in an aria-label or title on the row buttons", "Abaddon" not in (rm.get_attribute("aria-label") or "") + (tk.get_attribute("aria-label") or "") + (rm.get_attribute("title") or ""))
         open_shop(page, "gear")
-        check("a gear row's Remove and Bought are named with the item", page.locator("#shop-gear-panel .shop-remove").first.get_attribute("aria-label").startswith("Remove, ")
-              and page.locator("#shop-gear-panel .shop-tick").first.get_attribute("aria-label").startswith("Bought, "))
+        gear_spoken = page.evaluate("""() => [".shop-remove", ".shop-tick"].map(c => { const t = document.querySelector("#shop-gear-panel " + c);
+            return [t.getAttribute("aria-label"), t.getAttribute("aria-labelledby").split(" ").length, t.getAttribute("title")]; })""")
+        check("a gear row's Remove and Bought are named by the visible item name, with no name in a label or title",
+              gear_spoken[0][1] == 2 and gear_spoken[1][1] == 2 and "palette" not in str(gear_spoken), gear_spoken)
 
         print("\n--- 3. Double tap on Remove ---")
         load(page, paints=BIG, settings=SETTINGS)
@@ -74,14 +82,14 @@ def main():
         for tab, panel, count in (("paints", "#shop-panel", "shoppingItems().length"), ("gear", "#shop-gear-panel", "gearItems().length")):
             open_shop(page, tab)
             first = page.locator(f"{panel} .shop-remove").first
-            name = first.get_attribute("aria-label")
+            name = SPOKEN(page, f"{panel} .shop-remove")
             first.dblclick()
             page.wait_for_timeout(250)
             after = page.evaluate(f"() => {count}")
             check(f"{tab}: a real double click removes one item, 300 to 299", after == 299, after)
             page.click("#toast-undo")
             page.wait_for_timeout(250)
-            check(f"{tab}: Undo puts the removed item back", page.evaluate(f"() => {count}") == 300 and page.locator(f"{panel} .shop-remove").first.get_attribute("aria-label") == name)
+            check(f"{tab}: Undo puts the removed item back", page.evaluate(f"() => {count}") == 300 and SPOKEN(page, f"{panel} .shop-remove") == name)
             page.wait_for_timeout(700)
             page.locator(f"{panel} .shop-remove").first.click()
             page.wait_for_timeout(700)
