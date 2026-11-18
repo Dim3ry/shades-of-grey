@@ -3324,6 +3324,11 @@
     form.wish-form textarea { width: 100%; min-height: 64px; resize: vertical; box-sizing: border-box; }
     form.wish-form .wish-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
     form.wish-form .wish-buttons button { flex: 1 1 auto; min-height: 44px; }
+    /* TS1: tap areas. The little tick boxes sat at the left edge of their row, so a 44 px square around them was half outside the row. The row's label already toggles the tick;
+       these rules push the label's own left edge out (a negative margin that its padding gives back, so nothing moves on screen) until the box has at least 22 px around its centre. */
+    #view-shopping .shop-links-row, fieldset.my-shops .my-shop { margin-left: -12px; padding-left: 12px; box-sizing: border-box; }
+    .review-row input[type=checkbox] { width: 24px; height: 24px; }
+    .review-row label { margin-left: -10px; padding-left: 10px; min-height: 44px; }
 </style>
 </head>
 
