@@ -4,6 +4,7 @@ New behaviour only:
 1. The add button under the Shopping tabs changes its words with the tab (+ Add paint, + Add gear, + Add model).
 2. + Add paint: search, Add puts the paint on the list once, a second tap cannot duplicate, Undo, an owned paint says so.
 3. + Add gear: product types grouped by guide, Add once, Undo.
+SHP5: the models tab is now named "Wishlist models".
 4. + Add model: the Models add form opens in Shopping and saves to the Wishlist.
 5. Suggested also offers Running low paints, added only when tapped, then Undo puts it back.
 6. The colour wheel panel's paint rows have Add to shopping list in plain view, also with Show shop links off.
@@ -113,7 +114,7 @@ def main():
         page.click("#shop-add-slot button[type=submit]")
         page.wait_for_timeout(250)
         check("Save puts it on the Wishlist tab and closes the form", page.locator("#shop-wish-panel .wish-row", has_text="Test Squad").count() == 1
-              and page.locator("#shop-add-slot form").count() == 0 and tabs(page)[2] == "Wishlist (1)", tabs(page))
+              and page.locator("#shop-add-slot form").count() == 0 and tabs(page)[2] == "Wishlist models (1)", tabs(page))
         check("it is the same Wishlist Models shows", page.evaluate("() => wishes().some(w => w.name === 'Test Squad')"))
 
         print("\n--- 5. Running low in Suggested ---")
@@ -157,7 +158,7 @@ def main():
         check("an example recipe's disabled Add says why in one plain line", "Example paint. Add your own paint first." in line, line)
         load(page, paints=[], settings=SETTINGS)
         open_shop(page, "paints")
-        check("empty Paints tab says what fills it", page.inner_text("#shop-panel .shop-empty") == "Paints you add or mark Wishlist appear here.")
+        check("empty Paints tab says what fills it", page.inner_text("#shop-panel .shop-empty") == "Paints marked Wishlist appear here. Running low and Empty paints are offered under Suggested.")   # SHP5: new wording (what fills the tab, and where Running low and Empty are)
         page.click('#shop-seg [data-stab="gear"]')
         check("empty Gear tab says what fills it", page.inner_text("#shop-gear-panel .shop-empty") == "Gear you add here or from Guides appears here.")
         page.click('#shop-seg [data-stab="wishlist"]')

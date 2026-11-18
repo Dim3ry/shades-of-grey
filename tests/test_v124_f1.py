@@ -85,7 +85,7 @@ def main():
         page.evaluate("(n) => { const p = book.paints.find(x => x.id === 6); p.name = n; save(); }", mname)
         open_shop(page)
         head = page.locator("#shop-panel .shop-suggest-head")
-        check("Suggested sits under the list, closed, and named Suggested", head.count() == 1 and head.inner_text().strip() == "Suggested"
+        check("Suggested sits under the list, closed, and named Suggested", head.count() == 1 and head.inner_text().strip() == "Suggested (includes Running low and Empty paints)"   # SHP5: the label now says what it holds
               and head.get_attribute("aria-expanded") == "false" and not page.locator("#shop-panel .shop-suggest-item").first.is_visible())
         head.click()
         rows = suggested(page)

@@ -477,6 +477,9 @@
     #view-shopping .shop-links-row input { flex: none; }
     #view-shopping .shop-wish-list { margin-top: 12px; }
     #view-shopping .shop-empty { margin: 12px 0; }
+    /* SHP5: the one line saying what fills the Paints tab, and the models note on the Wishlist models tab */
+    #view-shopping .shop-fills { margin: 8px 0; }
+    #view-shopping #draft-card-wish { margin: 8px 0; }
     #view-shopping .shop-copy-row { margin-top: 12px; }
     /* SHP3: the add button and add box on the Shopping screen. */
     #view-shopping .shop-add-button { width: 100%; margin: 0 0 12px; }
@@ -3607,10 +3610,12 @@
       <h2 class="more-title" id="shopping-title">Shopping</h2>
       <label class="check-label shop-links-row"><input type="checkbox" id="shop-links-switch"> Show shop links</label>
       <fieldset class="my-shops" id="my-shops-shopping"></fieldset>
-      <div class="seg tab-row" id="shop-seg" role="tablist" aria-label="Paints, Gear or Wishlist">
+      <!-- SHP5: a kept, unfinished model (+ Add model). Filled by fillDraftCard(). -->
+      <div class="card notice-card draft-card hidden" id="draft-card-wish" role="note"></div>
+      <div class="seg tab-row" id="shop-seg" role="tablist" aria-label="Paints, Gear or Wishlist models">
         <button role="tab" data-stab="paints">Paints</button>
         <button role="tab" data-stab="gear">Gear</button>
-        <button role="tab" data-stab="wishlist">Wishlist</button>
+        <button role="tab" data-stab="wishlist">Wishlist models</button>
       </div>
       <!-- SHP3: one add button whose words follow the tab (+ Add paint, + Add gear, + Add model) and the box it opens. Filled by app.js. -->
       <button type="button" class="plain-button shop-add-button" id="shop-add-btn" aria-expanded="false">+ Add paint</button>
@@ -3717,7 +3722,7 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
-            <li id="help-wish-list">The <strong>Wishlist</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back. Paints you mark Wishlist go on your shopping list; models you want stay here until you press Got it. The <strong>Wishlist</strong> tab on the Shopping screen shows the same models, with the same Got it.</li>
+            <li id="help-wish-list">The <strong>Wishlist</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back. Paints you mark Wishlist go on your shopping list; models you want stay here until you press Got it. The <strong>Wishlist models</strong> tab on the Shopping screen shows the same models, with the same Got it.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
@@ -3831,7 +3836,7 @@
             <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in the <strong>Gear</strong> tab on the Shopping screen, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the Shopping button and in Copy as text. Settings → Your data → Shop links hides the links but not the Add button.</li>
             <li id="help-shop"><strong>Shopping</strong> is a screen of its own: tap the Shopping button at the top of any screen. It has three tabs. <strong>Paints</strong> lists the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Each opens that shop's own search for the paint's name in a new tab, so check you've got the right pot before you buy. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.</li>
             <li id="help-shop-add">Each tab has an add button under the tab row. <strong>+ Add paint</strong> searches the paint list and <strong>Add to shopping list</strong> puts the paint on your list as Wishlist. <strong>+ Add gear</strong> lists the things from Where to buy by guide. <strong>+ Add model</strong> opens the same form as Models. In Colour Lab, a paint you do not own has <strong>Add to shopping list</strong> on its row, in the colour wheel panel too, and every Add has an Undo. An example paint cannot go on the list: add your own paint first.</li>
-            <li id="help-shopping-tabs"><strong>Gear</strong> holds the things added from Where to buy. <strong>Wishlist</strong> shows the models on your Models Wishlist, with their count and note. Tap one to open it in Models, or press <strong>Got it</strong> to move it into Models (Undo puts it back). The number on the Shopping button counts paints and Gear only. <strong>Copy as text</strong> lists Paints, Gear and Wishlist under their own headings. <strong>Show shop links</strong> at the top of the screen is the same switch as in Settings.</li>
+            <li id="help-shopping-tabs"><strong>Gear</strong> holds the things added from Where to buy. <strong>Wishlist models</strong> shows the models on your Models Wishlist, with their count and note. Tap one to open it in Models, or press <strong>Got it</strong> to move it into Models (Undo puts it back). The number on the Shopping button counts paints and Gear only, not models. Paints marked Running low or Empty are offered under <strong>Suggested</strong> on the Paints tab, not on the list itself. <strong>Copy as text</strong> lists Paints, Gear and Wishlist models under their own headings. <strong>Show shop links</strong> at the top of the screen is the same switch as in Settings.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Paints tab, and the Guides sections use the full width.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Your data → Shop links</strong>. Your shopping list stays. <strong>My shops</strong>, under the same switch and at the top of the Shopping screen, ticks which shops you use: only those show in every shop link. Gear and Wishlist rows have a <strong>Find</strong> button that searches those shops for the Gear product type or the model name, only when you tap a link.</li>
             <li id="help-colour-lab"><strong>Colour Lab</strong> (in Painting): the colour wheel, <strong>Colour ideas</strong>, <strong>Colour plans</strong>, <strong>Colours you've used</strong> and the <strong>Paint Picker</strong>. Suggested paints show a fit and your own paints come first.</li>
