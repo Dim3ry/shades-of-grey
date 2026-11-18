@@ -72,7 +72,7 @@ def main():
         check("three kinds of item are on the list", len(before) == 5 and "Macragge Blue" in before and "Epsilon Plain" in before, before)
         for name in ("Alpha Blue", "Epsilon Plain", "Macragge Blue"):
             page.locator("#shop-panel .shop-item", has_text=name).locator(".shop-remove").click()
-            page.wait_for_timeout(150)
+            page.wait_for_timeout(650)   # SHP5: a second Remove tap within 600 ms is ignored (a double tap), so separate taps here wait it out
             check(f"Remove takes {name} off the list and says so", name not in names(page) and "Removed" in page.inner_text("#toast"))
         check("a removed paint is Not owned, and the basket count follows", status(page, 1) == "notowned"
               and page.inner_text("#basket-button .basket-count").strip() == "2", page.inner_text("#basket-button"))   # SHP2: the count is the badge

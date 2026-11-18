@@ -2752,7 +2752,7 @@
       head.type = "button";
       head.className = "plain-button shop-suggest-head";
       head.setAttribute("aria-expanded", String(suggestedOpen));
-      head.textContent = "Suggested";
+      head.textContent = "Suggested (includes Running low and Empty paints)";   // SHP5
       const list = document.createElement("ul");
       list.className = "shop-suggest-list";   // not "shop-list": that is the list itself
       list.hidden = !suggestedOpen;
@@ -3223,7 +3223,7 @@
     // The screen is "shopping" in views (settings.tab, the address #shopping); under the Painting piece of the menu bar (barOf). Everything
     // typed or pasted is set with textContent, so it always shows as plain text. render() redraws it while it is open (DRAWN_TABS).
     const SHOP_TABS = [{ id: "paints", name: "Paints", panel: "shop-panel" }, { id: "gear", name: "Gear", panel: "shop-gear-panel" },
-                       { id: "wishlist", name: "Wishlist", panel: "shop-wish-panel" }];
+                       { id: "wishlist", name: "Wishlist models", panel: "shop-wish-panel" }];   // SHP5: not just "Wishlist" (that is also a paint status and the Models switch)
     let shopTab = "paints";      // the open tab (kept while the app is open)
     let shoppingFrom = null;     // the screen the Shopping button was tapped on ("launch" = the start page), so Back returns there
     const shopSeg = document.getElementById("shop-seg");
@@ -3248,6 +3248,7 @@
         if (t.id !== shopTab) el.replaceChildren();   // a tab that is not showing is empty, so nothing stale (or a second #buy-bar) is left in it
       }
       showShopLinksChoice();
+      fillDraftCard("wish", !shopAddSlot.firstChild);   // SHP5: a kept unfinished model, offered at the top of Shopping
       shopAddBtn.textContent = SHOP_ADD_WORDS[shopTab];   // SHP3
       if (shopAddTab !== shopTab) { shopAddTab = shopTab; closeShopAdd(); }
       if (shopTab === "paints") renderShopPanel();
@@ -3409,7 +3410,7 @@
     shopAddBtn.addEventListener("click", () => {
       if (shopAddSlot.firstChild) { closeShopAdd(); return; }   // a second tap closes it
       shopAddBtn.setAttribute("aria-expanded", "true");
-      if (shopTab === "wishlist") { openWishForm(null, shopAddSlot); return; }   // the Models add form; Save redraws this tab (commit)
+      if (shopTab === "wishlist") { if (draftWaiting("wish")) { shopAddBtn.setAttribute("aria-expanded", "false"); return; } openWishForm(null, shopAddSlot); return; }   // the Models add form; Save redraws this tab (commit)
       const built = shopTab === "gear" ? buildShopAddGear() : buildShopAddPaints();
       shopAddSlot.appendChild(built.box);
       built.focus.focus();
@@ -3452,8 +3453,14 @@
       const head = document.createElement("div");
       head.className = "shop-head";
       card.append(head);
-      if (!any) card.append(shopEmptyLine("Paints you add or mark Wishlist appear here."));
-      else if (shopLinksOn()) {
+      if (!any) card.append(shopEmptyLine("Paints marked Wishlist appear here. Running low and Empty paints are offered under Suggested."));   // SHP5
+      else {
+        const line = document.createElement("p");   // SHP5: what fills this tab (only with paints on it; the empty line says it otherwise)
+        line.className = "hint shop-fills";
+        line.textContent = "Paints marked Wishlist are listed here.";
+        head.append(line);
+      }
+      if (any && shopLinksOn()) {
         // v52: the explanation of how the shop bar works sits behind one More info
         const shops = document.createElement("p");
         shops.className = "hint";
@@ -3506,8 +3513,8 @@
             remove.type = "button";
             remove.className = "plain-button shop-remove";
             remove.textContent = "Remove";
-            labelWithName(remove, "", nameEl);   // the button's name is "Remove" then the paint's name
-            remove.addEventListener("click", () => removeFromShoppingList(i.paint.id));
+            nameShopButton(remove, "Remove", nameEl);   // SHP5: "Remove, Paint name"
+            remove.addEventListener("click", () => { if (removeTapIsRepeat("paints")) return; removeFromShoppingList(i.paint.id); });
             li.append(tick, text, remove);
             list.appendChild(li);
           }
@@ -3542,8 +3549,23 @@
         tick.setAttribute("aria-checked", "true");
         setTimeout(done, SHOP_TICK_PAUSE);
       });
-      labelWithName(tick, "Bought", nameEl);   // "Bought" then the name
+      nameShopButton(tick, "Bought", nameEl);   // SHP5: "Bought, Name"
       return tick;
+    }
+    // SHP5: the visible words stay ("Remove"); the accessible name is the action, a comma, then the item (labelWithName gave one run-on string).
+    function nameShopButton(el, action, nameEl) {
+      el.removeAttribute("aria-labelledby");
+      el.setAttribute("aria-label", `${action}, ${nameEl.textContent.trim()}`);
+    }
+    // SHP5: after a Remove the next row slides under the finger, so a quick second tap used to remove that one too (300 became 298).
+    // A second Remove tap on the same list within 600 ms is ignored. (The Undo toast still brings back the one that was removed.)
+    const REMOVE_REPEAT_MS = 600;
+    const lastRemoveTap = { paints: -Infinity, gear: -Infinity };
+    function removeTapIsRepeat(list) {
+      const now = performance.now();
+      if (now - lastRemoveTap[list] < REMOVE_REPEAT_MS) return true;
+      lastRemoveTap[list] = now;
+      return false;
     }
 
     // The Gear tab (L1: Gear on the list): one row per item with the tick box, the name and where it came from, and Remove, built like a paint's row
@@ -3571,8 +3593,8 @@
         remove.type = "button";
         remove.className = "plain-button shop-remove";
         remove.textContent = "Remove";
-        labelWithName(remove, "", nameEl);
-        remove.addEventListener("click", () => removeGear(g.id));
+        nameShopButton(remove, "Remove", nameEl);   // SHP5
+        remove.addEventListener("click", () => { if (removeTapIsRepeat("gear")) return; removeGear(g.id); });
         li.append(tick, text, remove);
         const find = buildFind(g.name, nameEl);   // SHP4: the product type only
         if (find) li.appendChild(find);
@@ -3642,6 +3664,10 @@
       const all = wishes();
       const card = document.createElement("div");
       card.className = "card";
+      const note = document.createElement("p");   // SHP5: why the Shopping button's number leaves these out
+      note.className = "hint shop-fills";
+      note.textContent = BASKET_NOTE;
+      card.append(note);
       if (!all.length) card.append(shopEmptyLine("Models you add here or in Models appear here."));
       else {
         const list = document.createElement("ul");
@@ -3721,6 +3747,8 @@
     // pill gives one small pop (skipped for people who ask their phone for less motion).
     const basketButton = document.getElementById("basket-button");
     let basketShown = -1;
+    // SHP5: the Shopping button counts paints and Gear only. A tooltip and an accessible description say so (Wishlist models are not in the number).
+    const BASKET_NOTE = "Models are not counted in the button.";
     function updateBasket() {
       const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
       const n = paintsN + gearN;
@@ -3752,6 +3780,15 @@
           basketButton.classList.add("pop");
         }
         basketShown = n;
+      }
+      basketButton.title = "Shopping. " + BASKET_NOTE;
+      if (!document.getElementById("basket-note")) {
+        const note = document.createElement("span");
+        note.id = "basket-note";
+        note.className = "sr-only";
+        note.textContent = BASKET_NOTE;
+        basketButton.after(note);
+        basketButton.setAttribute("aria-describedby", "basket-note");
       }
       basketButton.setAttribute("aria-label", n === 0 ? "Shopping, empty"
         : `Shopping, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}`);
@@ -11036,6 +11073,7 @@
       const form = document.createElement("form");
       form.className = "card wish-form";
       form.setAttribute("aria-label", wish ? "Edit model" : "Add model");
+      if (!wish) form.dataset.new = "1";   // SHP5: only a new model is kept as a draft
       // props are plain element properties; the name used by screen readers and the list for suggestions are set with fixed attribute names
       const make = (tag, cls, props, text, label) => {
         const e = document.createElement(tag);
@@ -11101,7 +11139,7 @@
       (slot || wishFormSlot).appendChild(form);
       q(".w-name").focus();
     }
-    document.getElementById("wish-add").addEventListener("click", () => openWishForm(null));
+    document.getElementById("wish-add").addEventListener("click", () => { if (draftWaiting("wish")) return; openWishForm(null); });   // SHP5: a kept unfinished model is asked about first
 
     // ----- the Sort button and the "Sort models" sheet (a bottom sheet through showDialog) -----
     const sortButton = document.getElementById("toggle-sort");
@@ -23778,13 +23816,13 @@
     // import, Cancel and "yes, discard") or when you tap Discard and say yes. A discarded draft is gone
     // for good: there is no Undo and nothing brings it back.
     const DRAFTS_KEY = "shades-of-grey-drafts";
-    const DRAFT_KINDS = ["unit", "recipe", "paste"];
+    const DRAFT_KINDS = ["unit", "recipe", "paste", "wish"];   // SHP5: wish = the + Add model form
     const DRAFT_SYNC_MS = 300;        // how long after the last change a draft is written
     const DRAFT_SAFETY_MS = 4000;     // the safety net
     const DRAFT_TEXT_LIMIT = 50000;   // DR1: longest piece of text a draft keeps (was 500,000, which could fill the storage)
     const DRAFT_STEP_NOTE_LIMIT = 2000;   // DR1: one recipe step's note
-    let draftOffers = { unit: null, recipe: null, paste: null };    // kept drafts waiting for an answer
-    const draftWritten = { unit: null, recipe: null, paste: null }; // what THIS window last wrote (null = nothing)
+    let draftOffers = { unit: null, recipe: null, paste: null, wish: null };    // kept drafts waiting for an answer
+    const draftWritten = { unit: null, recipe: null, paste: null, wish: null }; // what THIS window last wrote (null = nothing)
     let draftSyncTimer = null;
 
     function readDraftStore() {
@@ -23831,7 +23869,17 @@
     function livePasteDraft() {
       return importDraft && importDraft.text.trim() ? { text: draftText(importDraft.text) } : null;
     }
-    const LIVE_DRAFTS = { unit: liveUnitDraft, recipe: liveRecipeDraft, paste: livePasteDraft };
+    // SHP5: the + Add model form (Shopping > Wishlist models, or Models > Wishlist). Only a NEW model counts (an edit of a saved one is not a draft),
+    // and only when something is typed. Save, Cancel and Escape remove the form, so syncDrafts then removes the draft too.
+    function liveWishDraft() {
+      const form = document.querySelector("form.wish-form[data-new]");
+      if (!form) return null;
+      const v = (c) => form.querySelector(c).value;
+      const name = v(".w-name"), game = v(".w-game"), faction = v(".w-faction"), note = v(".w-note");
+      if (![name, game, faction, note].some(x => x.trim())) return null;
+      return { name: draftText(name, 80), count: draftText(v(".w-count"), 8), game: draftText(game, 80), faction: draftText(faction, 80), note: draftText(note, WISH_NOTE_MAX) };
+    }
+    const LIVE_DRAFTS = { unit: liveUnitDraft, recipe: liveRecipeDraft, paste: livePasteDraft, wish: liveWishDraft };
 
     // ----- Checking what was kept (it came from storage, so it is checked like any saved data) -----
     const goodDraftColour = (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c) ? c.toLowerCase() : DEFAULT_PAINT_COLOUR;
@@ -23865,7 +23913,12 @@
     function cleanPasteDraft(raw) {
       return raw && typeof raw === "object" && typeof raw.text === "string" && raw.text.trim() ? { text: draftText(raw.text) } : null;
     }
-    const CLEAN_DRAFTS = { unit: cleanUnitDraft, recipe: cleanRecipeDraft, paste: cleanPasteDraft };
+    function cleanWishDraft(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const d = { name: draftText(raw.name, 80), count: draftText(raw.count, 8) || "1", game: draftText(raw.game, 80), faction: draftText(raw.faction, 80), note: draftText(raw.note, WISH_NOTE_MAX) };
+      return [d.name, d.game, d.faction, d.note].some(x => x.trim()) ? d : null;
+    }
+    const CLEAN_DRAFTS = { unit: cleanUnitDraft, recipe: cleanRecipeDraft, paste: cleanPasteDraft, wish: cleanWishDraft };
 
     // ----- Writing drafts down -----
     function syncDrafts() {
@@ -23911,10 +23964,11 @@
     }
 
     // ----- The cards and what their buttons do -----
-    const DRAFT_NAMES = { unit: "unit", recipe: "recipe", paste: "pasted recipe notes" };
+    const DRAFT_NAMES = { unit: "unit", recipe: "recipe", paste: "pasted recipe notes", wish: "model" };
     function draftCardLine(kind, kept) {
       const short = (t) => { const s = String(t).trim().replace(/\s+/g, " "); return s.length > 60 ? s.slice(0, 57) + "…" : s; };
       if (kind === "unit") return `You hadn't finished adding “${short(kept.name)}”.`;
+      if (kind === "wish") return kept.name.trim() ? `You hadn't finished adding “${short(kept.name)}”.` : "You hadn't finished adding a model.";
       if (kind === "recipe") {
         const name = kept.name.trim();
         const was = kept.id !== null && recipeById(kept.id) ? "changes to" : "";
@@ -23973,6 +24027,14 @@
         renderUnits();
         form.scrollIntoView({ block: "start" });
         nameInput.focus({ preventScroll: true });
+      } else if (kind === "wish") {
+        openShopping("wishlist");
+        shopAddBtn.setAttribute("aria-expanded", "true");
+        openWishForm(null, shopAddSlot);
+        const f = shopAddSlot.querySelector("form.wish-form");
+        f.querySelector(".w-name").value = kept.name; f.querySelector(".w-count").value = kept.count;
+        f.querySelector(".w-game").value = kept.game; f.querySelector(".w-faction").value = kept.faction; f.querySelector(".w-note").value = kept.note;
+        renderShopping();   // the card goes (the offer is answered)
       } else if (kind === "recipe") {
         const d = kept;
         const existing = d.id !== null ? recipeById(d.id) : null;
@@ -24007,6 +24069,7 @@
         writeDraftStore(store);
         renderUnits();
         renderRecipes();
+        if (kind === "wish") renderShopping();   // SHP5
       }, { danger: true, yes: "Discard", no: "Keep it" });
     }
     // Starting a new draft while an old one waits would quietly replace it, so the app asks first.
@@ -24025,7 +24088,7 @@
         });
       return true;
     }
-    const draftNotNow = { unit: false, recipe: false, paste: false };   // UX1: true while "Not now" starts the new one
+    const draftNotNow = { unit: false, recipe: false, paste: false, wish: false };   // UX1: true while "Not now" starts the new one
     loadKeptDrafts();
 
     // ================= v27: COUNTING VISITS (anonymous, no cookies) =================

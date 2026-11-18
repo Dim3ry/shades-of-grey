@@ -3,6 +3,7 @@
 New behaviour only:
 1. The Shopping button in the header: icon, the word Shopping, a count of paints and Gear only (hidden at 0), a screen reader name with the count.
 2. Painting has no Shopping tab; the Painting tab row fits at 320 px.
+SHP5: the models tab is now named "Wishlist models" (tab labels below follow it).
 3. The Shopping screen: Paints (N), Gear (N), Wishlist (N); each tab shows its own content; the Wishlist tab is drawn from the Models Wishlist.
 4. Got it and Undo on the Wishlist tab; a row tap opens the model in Models; the count in the button does not move for Wishlist models.
 5. Copy as text has Paints, Gear and Wishlist headings, and leaves out an empty one.
@@ -86,7 +87,7 @@ def main():
         page.wait_for_function("() => settings.tab === 'shopping'")
         check("the screen is titled Shopping and the Painting piece of the bar is lit",
               page.inner_text("#shopping-title") == "Shopping" and page.get_attribute('.tabs button[data-tab="recipes"]', "aria-current") == "page")
-        check("tabs carry their counts", tabs(page) == ["Paints (2)", "Gear (0)", "Wishlist (2)"], tabs(page))
+        check("tabs carry their counts", tabs(page) == ["Paints (2)", "Gear (0)", "Wishlist models (2)"], tabs(page))
         check("Paints tab lists the two paints", page.locator("#shop-panel .shop-item").count() == 2 and page.locator("#shop-panel .shop-gear-item").count() == 0)
         page.evaluate("() => addGear('wet palette', 'Guides')")
         check("adding Gear updates the open screen's tab count and the button", tabs(page)[1] == "Gear (1)" and badge(page) == "3")
@@ -100,7 +101,7 @@ def main():
               rows.count() == 2 and "5 models" in page.inner_text("#shop-wish-panel") and "for the big army" in page.inner_text("#shop-wish-panel"))
         page.evaluate("() => { settings.modelWishes.push({ id: 9, name: 'Late Add', count: 2, note: '', game: '', faction: '', really: false, added: '' }); render(); }")
         check("it is drawn from wishes(): a model added there shows here at once", page.locator("#shop-wish-panel .wish-row", has_text="Late Add").count() == 1
-              and tabs(page)[2] == "Wishlist (3)")
+              and tabs(page)[2] == "Wishlist models (3)")
         page.evaluate("() => { settings.modelWishes = settings.modelWishes.filter(w => w.id !== 9); render(); }")
 
         print("\n--- 4. Got it, Undo, open in Models ---")
@@ -108,7 +109,7 @@ def main():
         page.locator("#shop-wish-panel .wish-row", has_text="Another One").locator(".wish-got").click()
         page.wait_for_timeout(200)
         check("Got it moves the model into Models and leaves the tab", page.evaluate("() => models.some(m => m.name === 'Another One')")
-              and page.locator("#shop-wish-panel .wish-row").count() == 1 and tabs(page)[2] == "Wishlist (1)")
+              and page.locator("#shop-wish-panel .wish-row").count() == 1 and tabs(page)[2] == "Wishlist models (1)")
         check("the button's count did not change", badge(page) == before, badge(page))
         page.click("#toast-undo")
         page.wait_for_timeout(200)
@@ -146,10 +147,9 @@ def main():
         check("ticking it in Settings ticks it here, and the Buy these bar is back", sw.is_checked() and page.locator("#shop-panel .buy-bar").count() == 1)
 
         print("\n--- 7. Back, and the Bought tick's name ---")
-        label = page.locator("#shop-panel .shop-tick").first.get_attribute("aria-labelledby")
-        name = page.evaluate("""() => { const t = document.querySelector('#shop-panel .shop-tick');
-            return t.getAttribute('aria-labelledby').split(' ').map(id => document.getElementById(id)).map(e => e === t ? t.getAttribute('aria-label') : e.textContent).join(' ').trim(); }""")
-        check("the Bought tick is named Bought plus the paint", name.startswith("Bought ") and ("Alpha Blue" in name or "Beta Red" in name), name)
+        # SHP5: the name is now a plain aria-label, "Bought, Name" (it was a run-on aria-labelledby list)
+        name = page.locator("#shop-panel .shop-tick").first.get_attribute("aria-label")
+        check("the Bought tick is named Bought plus the paint", name.startswith("Bought, ") and ("Alpha Blue" in name or "Beta Red" in name), name)
         page.click('.tabs button[data-tab="units"]')
         page.wait_for_timeout(200)
         page.click("#basket-button")
