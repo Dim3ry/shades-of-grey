@@ -20863,6 +20863,258 @@
       }
     }
 
+    // ================= PL1: PASTE A LIST OF PAINTS (Your Palette) =================
+    // A plain list of paint names, one per line. Each row gets its own status (Owned or Wishlist). Nothing here makes a recipe.
+    // pasteList: null (closed) or { text, rows: null | [...], setAll, over } while the panel is open. Kept while the app is open, never saved.
+    let pasteList = null;
+    let pasteListText = "";   // what is in the box, kept when the panel is closed (until the paints are added)
+    const PASTE_LIST_MAX_LINES = 400;
+    const pasteListPanel = document.getElementById("paste-list-panel");
+
+    // A line of the list -> its paint names and a quantity. Only a bullet or a number ("1.", "1)") comes off the front, never an apostrophe.
+    function pasteListParts(line) {
+      const SP = "[\\s\\u00a0]*";
+      let text = String(line || "").replace(new RegExp("^" + SP + "(?:[-*\\u2022\\u00b7\\u2013\\u2014]+|\\d+\\s*[.)])(?=\\s|$)" + SP), "");
+      text = text.replace(new RegExp("^" + SP + "[-*\\u2022\\u00b7]+" + SP + "(?=[^\\\\s*\\u2022\\u00b7-])"), "");   // "-Abaddon Black" with no space
+      return text.split(/[,;]/).map(t => t.trim()).filter(t => /[\p{L}\p{N}]/u.test(t)).map(t => {
+        const m = t.match(/^(\d{1,2})\s*[x×]\s*(.+)$/i) || t.match(/^(.+?)\s+[x×]\s*(\d{1,2})$/i) || t.match(/^(.+?)\s*\((\d{1,2})\)$/);
+        if (!m) return { name: t, qty: 0 };
+        const lead = /^\d/.test(m[1]);
+        const name = (lead ? m[2] : m[1]).trim(), qty = Number(lead ? m[1] : m[2]);
+        return qty < 2 || brandFromText(name) ? { name: t, qty: 0 } : { name, qty };   // "Tamiya X1" is a paint, not "Tamiya" times one
+      }).filter(p => /[\p{L}\p{N}]/u.test(p.name));
+    }
+
+    // The text -> { rows, over }. Row kinds: "found" (sure), "check" (options + keep as typed), "none" (not found, an own paint if ticked).
+    function readPasteList(text, setAll) {
+      candidateCache = null;
+      candidateCache = matchCandidates();   // built once for the whole list, as parseRecipeText does
+      try {
+        const lines = String(text || "").split(/\r?\n/);
+        const found = [], check = [], none = [], seen = [];
+        let brand = "";
+        const sameRow = (list, key) => list.find(r => r.key === key);
+        for (const line of lines.slice(0, PASTE_LIST_MAX_LINES)) {
+          const bare = line.replace(/^[\s ]*(?:[-*•·]+[\s ]*)?/, "").replace(/[:：]\s*$/, "").trim();
+          const header = bare && /[\p{L}]/u.test(bare) ? brandFromText(bare) : "";
+          if (header) { brand = header; continue; }   // a line of only a brand sets the brand for the lines under it
+          for (const part of pasteListParts(line)) {
+            const m = matchPaint(part.name, { brand, earlier: seen });
+            const qty = part.qty > 1 ? part.qty : 0;
+            if (m.status === "sure" || m.status === "material") {
+              const p = m.paint;
+              seen.push(p);
+              const key = sameKey((p.brand || "") + "|" + p.name);
+              const dup = sameRow(found, key);
+              if (dup) { if (qty) dup.qty = qty; continue; }
+              found.push({ kind: "found", key, typed: part.name, paint: p, qty, status: setAll, tick: true });
+            } else if (m.status === "unsure" && m.suggestions.length) {
+              const key = sameKey(part.name);
+              const dup = sameRow(check, key);
+              if (dup) { if (qty) dup.qty = qty; continue; }
+              const asTyped = { brand, name: tidyName(stripStrayQuotes(part.name)), colour: DEFAULT_PAINT_COLOUR };
+              check.push({ kind: "check", key, typed: part.name, options: m.suggestions.slice(0, 2), asTyped, choice: 0, qty, status: setAll, tick: true });
+            } else {
+              const key = sameKey(part.name);
+              const dup = sameRow(none, key);
+              if (dup) { if (qty) dup.qty = qty; continue; }
+              const own = { brand: "", name: tidyName(stripStrayQuotes(part.name)), colour: DEFAULT_PAINT_COLOUR };
+              none.push({ kind: "none", key, typed: part.name, paint: own, qty, status: setAll, tick: false });
+            }
+          }
+        }
+        return { rows: [...found, ...check, ...none], over: lines.length > PASTE_LIST_MAX_LINES };
+      } finally { candidateCache = null; }
+    }
+
+    // The paint a row will add (the chosen option, or the name as typed), and the paint already in the palette with that name.
+    function pasteRowPaint(row) {
+      if (row.kind === "check") return row.choice === -1 ? row.asTyped : row.options[row.choice];
+      return row.paint;
+    }
+    function pasteRowExisting(row) {
+      const p = pasteRowPaint(row);
+      const brand = tidyBrand(p.brand);
+      return book.paints.find(x => sameText(x.name, p.name) && (!brand || sameText(x.brand, brand))) || null;
+    }
+    // A Wishlist row never lowers a paint you already have (Owned or Running low): it is left alone.
+    function pasteRowLocked(row) {
+      const have = pasteRowExisting(row);
+      return row.status === "wishlist" && !!have && haveIt(have);
+    }
+    function pasteRowOn(row) { return row.tick && !pasteRowLocked(row); }
+
+    function addPastedPaints() {
+      const st = pasteList;
+      const rows = st.rows.filter(pasteRowOn);
+      if (!rows.length) return;
+      const before = JSON.stringify(book);
+      const kept = changeAndSave(() => {
+        for (const row of rows) {
+          const p = pasteRowPaint(row);
+          const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+          if (p.type === "material") paint.type = "material";
+          if (row.status === "owned") {
+            if (paintStatus(paint) !== "owned") setStatusByHand(paint, "owned");
+            if (row.qty > 1) paint.qty = row.qty;   // a quantity replaces the old one, it never adds to it
+          } else if (paintStatus(paint) !== "wishlist") setStatusByHand(paint, "wishlist");
+        }
+      });
+      if (!kept) {
+        renderPasteList();
+        showNotSaved("Not saved: storage on this device is full. Your pasted list is still here. Save a backup, free some space, then tap Add again.");
+        return;
+      }
+      const undo = bookUndo(before);
+      const same = rows.every(r => r.status === rows[0].status);
+      pasteList = null;
+      pasteListText = "";
+      render();
+      renderPasteList();
+      showToast(`Added ${plural(rows.length, "paint")}${same ? (rows[0].status === "owned" ? " as Owned" : " as Wishlist") : ""}`, () => { undo(); render(); });
+    }
+
+    document.getElementById("paste-list-button").addEventListener("click", () => {
+      pasteList = pasteList ? null : { text: pasteListText, rows: null, setAll: "owned", over: false };
+      renderPasteList();
+    });
+
+    function renderPasteList() {
+      const keep = document.activeElement && pasteListPanel.contains(document.activeElement) ? document.activeElement.dataset.plKey : "";
+      pasteListPanel.classList.toggle("hidden", !pasteList);
+      pasteListPanel.replaceChildren();
+      if (!pasteList) return;
+      const st = pasteList;
+      const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+      const mark = (node, key) => { node.dataset.plKey = key; return node; };
+      const close = el("button", "plain-button", "Close");
+      close.addEventListener("click", () => { pasteList = null; renderPasteList(); });
+
+      if (!st.rows) {
+        const box = document.createElement("textarea");
+        box.id = "paste-list-text";
+        box.rows = 7;
+        box.value = st.text;
+        box.setAttribute("aria-label", "Paints to add");
+        box.autocomplete = "off";
+        box.spellcheck = false;
+        box.className = "pl1-text";
+        box.addEventListener("input", () => { st.text = pasteListText = box.value; });
+        const read = el("button", "primary-button", "Read list");
+        read.id = "paste-list-read";
+        read.addEventListener("click", () => {
+          st.text = pasteListText = box.value;
+          const out = readPasteList(st.text, st.setAll);
+          st.rows = out.rows;
+          st.over = out.over;
+          renderPasteList();
+        });
+        const row = el("div", "pl1-actions");
+        row.append(read, close);
+        pasteListPanel.append(box, row);
+        return;
+      }
+
+      // Set all to
+      const all = el("div", "pl1-setall");
+      all.setAttribute("role", "radiogroup");
+      all.setAttribute("aria-label", "Set all to");
+      all.append(el("span", "pl1-setall-label", "Set all to"));
+      for (const [key, label] of [["owned", "Owned"], ["wishlist", "Wishlist"]]) {
+        const wrap = el("label", "pl1-radio");
+        const input = document.createElement("input");
+        input.type = "radio"; input.name = "pl1-all"; input.value = key; input.checked = st.setAll === key;
+        mark(input, "all-" + key);
+        input.addEventListener("change", () => { st.setAll = key; for (const r of st.rows) r.status = key; renderPasteList(); });
+        wrap.append(input, label);
+        all.appendChild(wrap);
+      }
+      pasteListPanel.appendChild(all);
+      if (st.over) pasteListPanel.appendChild(el("p", "hint", `Only the first ${PASTE_LIST_MAX_LINES} lines were read.`));
+      if (!st.rows.length) pasteListPanel.appendChild(el("p", "hint", "No paints found."));
+
+      const addBtn = el("button", "primary-button");
+      addBtn.id = "paste-list-add";
+      const updateAdd = () => { const n = st.rows.filter(pasteRowOn).length; addBtn.textContent = `Add ${plural(n, "paint")}`; addBtn.disabled = n === 0; };
+
+      const group = (title, kind) => {
+        const rows = st.rows.filter(r => r.kind === kind);
+        if (!rows.length) return;
+        pasteListPanel.appendChild(el("h3", "pl1-group", `${title} (${rows.length})`));
+        const list = el("ul", "pl1-rows");
+        rows.forEach((row, i) => {
+          const id = `${kind}-${i}`;
+          const li = el("li", "pl1-row");
+          li.dataset.kind = kind;
+          const locked = pasteRowLocked(row);
+          const tick = el("label", "pl1-tick");
+          const box = document.createElement("input");
+          box.type = "checkbox"; box.checked = pasteRowOn(row); box.disabled = locked;
+          mark(box, "tick-" + id);
+          box.addEventListener("change", () => { row.tick = box.checked; updateAdd(); });
+          tick.appendChild(box);
+          const text = el("span", "pl1-tick-text");
+          if (kind === "found") {
+            const p = row.paint;
+            tick.append(makeSwatch(p.colour || DEFAULT_PAINT_COLOUR));
+            const name = el("span", "import-option-name", p.name + (row.qty > 1 && row.status === "owned" ? ` x${row.qty}` : ""));
+            const b = importBrandText(p);
+            if (b) name.append(" ", el("small", "import-option-brand", b));
+            text.appendChild(name);
+          } else if (kind === "check") {
+            text.appendChild(el("span", "import-option-name", `You wrote "${row.typed}"`));
+          } else {
+            text.appendChild(el("span", "import-option-name", "Add as your own paint"));
+            text.appendChild(el("small", "pl1-typed", `"${row.paint.name}"`));
+          }
+          tick.appendChild(text);
+          li.appendChild(tick);
+          if (kind === "check") {
+            const opts = el("div", "import-options");
+            const choices = [...row.options.map((p, k) => [k, p]), [-1, null]];
+            for (const [k, p] of choices) {
+              const opt = el("label", "import-option");
+              const radio = document.createElement("input");
+              radio.type = "radio"; radio.name = "pl1-pick-" + id; radio.checked = row.choice === k;
+              mark(radio, `pick-${id}-${k}`);
+              radio.addEventListener("change", () => { row.choice = k; renderPasteList(); });
+              opt.appendChild(radio);
+              if (p) opt.append(...importPaintLabel(p)); else opt.append("Keep as typed");
+              opts.appendChild(opt);
+            }
+            li.appendChild(opts);
+          }
+          const select = document.createElement("select");
+          select.className = "pl1-status";
+          select.setAttribute("aria-label", `Status for ${kind === "check" ? row.typed : pasteRowPaint(row).name}`);
+          for (const [key, label] of [["owned", "Owned"], ["wishlist", "Wishlist"]]) {
+            const o = document.createElement("option"); o.value = key; o.textContent = label; o.selected = row.status === key; select.appendChild(o);
+          }
+          mark(select, "status-" + id);
+          select.addEventListener("change", () => { row.status = select.value; renderPasteList(); });
+          li.appendChild(select);
+          const have = pasteRowExisting(row);
+          const now = have ? paintStatus(have) : "";
+          if (locked) li.appendChild(el("p", "pl1-note", `${statusLabel(now)} already`));
+          else if (now) li.appendChild(el("p", "pl1-note", `${statusLabel(now)} now`));
+          list.appendChild(li);
+        });
+        pasteListPanel.appendChild(list);
+      };
+      group("Found", "found");
+      group("Check", "check");
+      group("Not found", "none");
+
+      addBtn.addEventListener("click", addPastedPaints);
+      const edit = el("button", "plain-button", "Edit list");
+      edit.addEventListener("click", () => { st.rows = null; renderPasteList(); });
+      const actions = el("div", "pl1-actions");
+      actions.append(addBtn, edit, close);
+      pasteListPanel.appendChild(actions);
+      updateAdd();
+      if (keep) { const again = pasteListPanel.querySelector(`[data-pl-key="${keep}"]`); if (again) again.focus(); }
+    }
+
     // ================= SETTINGS TAB =================
 
     // ----- Stage editor -----
@@ -23688,12 +23940,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=174".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=175".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v174";
+    const APP_VERSION = "v175";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;

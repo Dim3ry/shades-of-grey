@@ -6,6 +6,10 @@
 
     // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
+      { version: "v175", date: "19 Nov 2026", changes: [
+        "Your Palette has Paste a list of paints: paste names, check what it found, and add them as Owned or Wishlist in a few taps.",
+        "Fixes and tidying.",
+      ] },
       { version: "v174", date: "18 Nov 2026", changes: [
         "Shopping: the models tab is now Wishlist models, each tab says what fills it, Remove no longer removes two items on a double tap, and Add model keeps what you typed. Tick boxes are easier to hit and old Undo messages clear.",
         "Fixes and tidying.",
