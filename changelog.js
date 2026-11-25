@@ -6,6 +6,10 @@
 
     // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
+      { version: "v176", date: "25 Nov 2026", changes: [
+        "Optional recipe steps say Optional on their line and have a dashed border. A paint you don't have has a Mark owned button in the open step.",
+        "Fixes and tidying.",
+      ] },
       { version: "v175", date: "19 Nov 2026", changes: [
         "Your Palette has Paste a list of paints: paste names, check what it found, and add them as Owned or Wishlist in a few taps.",
         "Fixes and tidying.",

@@ -140,7 +140,7 @@ with sync_playwright() as pw:
         has = lambda n, word: re.search(r"%d\. [^\n]*, %s" % (n, word), text) is not None
         check(f"{size}: view shows guessed Layer", has(1, "Layer"), text[:300])
         check(f"{size}: view shows Contrast and mix ratio", has(2, "Contrast") and "mix 2:1" in text)
-        check(f"{size}: view shows Varnish (optional)", has(3, "Varnish") and "optional" in text)
+        check(f"{size}: view shows Varnish (optional)", has(3, "Varnish") and "Optional" in text)   # RO1: the word moved from the facts line to the step line, capital O
         check(f"{size}: view shows Texture for rocks", has(4, "Texture"))
         check(f"{size}: view shows note", "heavier on the top" in text)
         check(f"{size}: optional step faded", page.locator("li.optional-step").count() == 1)
