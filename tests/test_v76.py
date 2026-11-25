@@ -62,6 +62,7 @@ def main():
             viewed = no_sideways(page)
             page.click('nav button[data-tab="recipes"]')
             page.click('[data-view="palette"]')
+            page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; tests of the list tap List first
             page.wait_for_timeout(150)
             paint_list = no_sideways(page)
             page.click(".paint-head >> nth=0")

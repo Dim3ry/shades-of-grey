@@ -122,6 +122,7 @@ def main():
         print("\n--- 7. From Your Palette: still full screen ---")
         page.click("#recipe-page >> text=All recipes")
         page.click('#recipe-seg [data-view="palette"]')
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         page.click("#paint-list .paint-head:has-text('Macragge Blue')")
         # v80: from 900 px an open paint's details (with its recipe links) are in the Palette side pane, not under the paint in the list.
         page.locator("#palette-side").get_by_text("Blue armour").first.click()

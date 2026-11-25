@@ -167,6 +167,7 @@ def main():
         # ---------- 6. Your Palette, and the phone's Back ----------
         print("\n--- 6. Your Palette ---")
         t.load(page, paints=PAINTS, recipes=RECIPES, settings=dict(SETTINGS, recipeView="palette"))
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         page.click('#paint-list .paint-head:has-text("Eshin Grey")')
         page.wait_for_timeout(200)
         pal = btn(4, "#paint-list")

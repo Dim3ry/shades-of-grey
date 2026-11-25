@@ -150,7 +150,9 @@ def sweep(page, tag, results_out, seen):
     page.locator("#fs-chips-stage .chip").last.click()
     close_filters(page)
     seg(page, "recipes"); look("recipes")
-    seg(page, "palette"); look("palette")
+    seg(page, "palette")
+    page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this sweep audits the list rows, so it taps List first
+    look("palette")
     page.locator(".paint-head").first.click(); look("palette, a paint open (status)")
     page.fill("#palette-search", "blue"); page.wait_for_timeout(300); look("palette search")
     page.fill("#palette-search", ""); t.blur(page)
@@ -228,10 +230,11 @@ def main():
 
         # Two-line buttons: the status row at 390 in Paint Bench shares the row with "Running / low" on two lines.
         load(page, {"theme": "bench", "appearance": "dark"})
-        seg(page, "palette"); page.locator(".paint-head").first.click(); settle(page)
+        seg(page, "palette"); page.click('#palette-layout [data-layout="list"]'); page.locator(".paint-head").first.click(); settle(page)   # PW1 (v178): taps List first, the palette now opens in Swatches
         st = page.evaluate("""() => { const r = document.querySelector('.status-row .chips'); return { cls: r.className, over: r.scrollWidth > r.clientWidth + 1,
             radius: [...r.children].map(c => getComputedStyle(c).borderTopLeftRadius), h: [...r.children].map(c => Math.round(c.getBoundingClientRect().height)) }; }""")
-        check("Paint Bench 390: the five status buttons share one row with no sideways scroll", "chips-fit" in st["cls"] and not st["over"], st)
+        # PW1 (v178): the five Status buttons now wrap onto rows so no word is split (it was one squeezed row); the point kept here is no sideways scroll and 44 px buttons.
+        check("Paint Bench 390: the five status buttons wrap onto rows with no sideways scroll", "chips-wrap" in st["cls"] and not st["over"] and min(st["h"]) >= 44, st)
         check("…and when a label takes two lines the buttons get rounded corners, all the same height", "chips-tall" not in st["cls"]
               or (len(set(st["radius"])) == 1 and float(st["radius"][0].replace("px", "")) < 14 and len(set(st["h"])) == 1), st)  # AB5: the look's control radius, not a fixed 14 px
         page.locator(".paint-item").first.screenshot(path=os.path.join(t.SHOTS, "v49-status-bench-dark-390.png"))
@@ -283,6 +286,7 @@ def main():
         close_filters(page)
 
         seg(page, "palette")
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): taps List first
         page.locator(".paint-head").first.click(); settle(page)
         page.locator(".status-row .status-chip[data-status='low']").click(); settle(page)
         first = page.evaluate("JSON.parse(localStorage.getItem('shades-of-grey-recipes')).paints")

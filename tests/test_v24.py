@@ -96,6 +96,8 @@ def recipe_view(page, view):
         if page.evaluate("() => settings.tab") == "shopping":   # SHP2: coming back from the Shopping screen to a Painting tab: tap the Painting piece first
             page.click('nav button[data-tab="recipes"]')
         page.click(f'#recipe-seg button[data-view="{view}"]')
+        if view == "palette" and page.locator('#palette-layout [data-layout="list"]').count():   # PW1 (v178): Your Palette now opens in Swatches; tests of the list tap List first
+            page.click('#palette-layout [data-layout="list"]')
     quiet(page)
 
 def shot(page, name):

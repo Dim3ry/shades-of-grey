@@ -79,6 +79,7 @@ def main():
         seed = {"parts": ["Whole model"], "techniques": ["Layer"], "schemes": [], "shorthand": {}, "v15": True, "recipes": [],
                 "paints": [{"id": 1, "name": "Mid Blue", "brand": "Test", "colour": "#3355aa", "status": "owned"}]}
         t.existing(page, [], seed, {"tab": "recipes", "recipeView": "palette"})
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         page.wait_for_selector("#paint-list .paint-item")
         page.evaluate("() => document.querySelector('#paint-list .paint-head').click()")
         page.wait_for_selector("[data-ideas-for]")

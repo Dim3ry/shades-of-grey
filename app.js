@@ -2275,7 +2275,7 @@
       label.className = "panel-field";
       label.textContent = "Status";
       const chips = document.createElement("div");
-      chips.className = "chips";
+      chips.className = "chips chips-wrap status-chips";
       chips.style.marginTop = "0";
       const current = paintStatus(paint);
       for (const s of PAINT_STATUSES) {
@@ -13219,7 +13219,7 @@
       span.appendChild(svg);
       return span;
     }
-    let paletteLayout = "list";   // "list" or "swatches" (kept while the app is open)
+    let paletteLayout = "swatches";   // "list" or "swatches" (swatches first; the choice is kept only while the app is open)
     let swatchPickId = null;      // the paint opened in the Swatches view
     const paintOptionsOpen = new Map();   // paint id -> { open } for each paint's "More options"
 
@@ -24001,12 +24001,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=177".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=178".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v177";
+    const APP_VERSION = "v178";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;

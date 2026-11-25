@@ -69,6 +69,7 @@ with sync_playwright() as pw:
     load(page, V17_1_BOOK)
     page.evaluate("showTab('recipes')")
     page.click("#recipe-seg button[data-view='palette']")
+    page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
     page.locator(".paint-item", has_text="Nuln Oil").locator("button.paint-head").click()
     item = page.locator(".paint-item", has_text="Nuln Oil")
     check("quantity shows one by default", item.locator(".qty-count").text_content() == "1")

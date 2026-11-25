@@ -6,6 +6,10 @@
 
     // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
+      { version: "v178", date: "25 Nov 2026", changes: [
+        "Your Palette opens as colour swatches, with List one tap away. The five Status buttons now wrap onto two rows so no word is cut in half.",
+        "Fixes and tidying."
+      ] },
       { version: "v177", date: "25 Nov 2026", changes: [
         "Every real paint in an open recipe step has a small status menu next to Mark owned, so you can set Owned, Wishlist, Running low, Empty or Not owned right there.",
         "Fixes and tidying.",

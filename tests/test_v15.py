@@ -151,6 +151,7 @@ with sync_playwright() as pw:
         has_palette = page.evaluate("typeof renderPalette === 'function'")
         if has_palette:
             page.evaluate("settings.paintSort = 'colour'; renderPalette()")
+            page.evaluate("() => { const b = document.querySelector('#palette-layout [data-layout=list]'); if (b) b.click(); }")   # PW1 (v178): Your Palette now opens in Swatches; tests of the list tap List first
             names = page.locator(".paint-item .name").all_text_contents()
             check(f"{size}: material last in colour sort", names and names[-1] == "Rocks", names)
             details = page.locator(".paint-item .details").all_text_contents()
