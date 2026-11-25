@@ -6,6 +6,10 @@
 
     // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
+      { version: "v177", date: "25 Nov 2026", changes: [
+        "Every real paint in an open recipe step has a small status menu next to Mark owned, so you can set Owned, Wishlist, Running low, Empty or Not owned right there.",
+        "Fixes and tidying.",
+      ] },
       { version: "v176", date: "25 Nov 2026", changes: [
         "Optional recipe steps say Optional on their line and have a dashed border. A paint you don't have has a Mark owned button in the open step.",
         "Fixes and tidying.",
