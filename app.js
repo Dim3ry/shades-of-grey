@@ -11955,7 +11955,14 @@
         const mark = document.createElement("span");
         mark.className = "fold-mark";
         mark.setAttribute("aria-hidden", "true");
-        const parts = [text, dots];
+        const parts = [text];
+        if (o.optional && o.optional()) {   // RO1: plain small text that never shrinks, so a long step name is cut instead of this word
+          const opt = document.createElement("span");
+          opt.className = "step-optional";
+          opt.textContent = "Optional";
+          parts.push(opt);
+        }
+        parts.push(dots);
         if (o.noPaint && o.noPaint()) {   // v62: words, not just an empty space where the dots go
           const none = document.createElement("span");
           none.className = "step-no-paint";
@@ -11978,6 +11985,33 @@
       button.addEventListener("click", () => { o.fold.open = !o.fold.open; draw(); });
       draw();
       return button;
+    }
+    // RO1: "Mark owned" under a paint in an open recipe step. Same change as the Owned status button, with Undo. The page is drawn
+    // again in place: open steps stay open, the scroll position is put back and focus goes to the paint's line.
+    function buildMarkOwned(paint, lineId) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "plain-button mark-owned";
+      b.textContent = "Mark owned";
+      b.setAttribute("aria-describedby", lineId);   // reads the paint's line after the button's words
+      b.addEventListener("click", () => {
+        const before = JSON.stringify(book);
+        setStatusByHand(paint, "owned");
+        const undo = bookUndo(before);
+        const ok = save();
+        const y = window.scrollY;
+        const redraw = () => {
+          renderRecipes(); updateBasket(); refreshShopping(); updateShopFoldouts();
+          window.scrollTo(0, y);
+        };
+        redraw();
+        const next = recipePage.querySelector(`.paint-line[data-paint-id="${paint.id}"]`);
+        if (next) next.focus({ preventScroll: true });
+        if (ok) {
+          showToast(`${paint.name} marked owned`, () => { undo(); render(); updateBasket(); updateShopFoldouts(); });
+        } else showNotSaved();
+      });
+      return b;
     }
     // The one-line key for the Have / Missing marks.
     function buildHaveKey() {
@@ -12216,6 +12250,9 @@
           }
           const mark = haveMark(paint);   // v17, v50: a tick or a cross
           if (mark) line.appendChild(mark);
+          line.dataset.paintId = String(paint.id);
+          line.id = `rstep-${i}-paint-${paint.id}`;
+          line.tabIndex = -1;   // RO1: a place for focus to land when Mark owned replaces itself
           // Show the mix % when paints are mixed, or a single paint isn't 100% (e.g. thinned).
           if (sp.mix !== null && (mixed || sp.mix !== 100)) {
             const mix = document.createElement("span");
@@ -12224,13 +12261,14 @@
             line.appendChild(mix);
           }
           body.appendChild(line);
+          if (!isMadeUpPaint(paint) && !isExamplePaint(paint) && !haveIt(paint)) body.appendChild(buildMarkOwned(paint, line.id));   // RO1
           const ideas = buildIdeasForButton(paint, { kind: "recipe", recipeId: recipe.id, step: i });   // v69
           if (ideas) body.appendChild(ideas);
         }
         const options = [];
         const facts = document.createElement("p");
         facts.className = "step-facts";
-        facts.textContent = [coatsText(step.coats), step.ratio ? `mix ${step.ratio}` : "", step.optional ? "optional" : ""].filter(Boolean).join(" · ");
+        facts.textContent = [coatsText(step.coats), step.ratio ? `mix ${step.ratio}` : ""].filter(Boolean)   // RO1: "Optional" shows on the step line now.join(" · ");
         options.push(facts);
         if (step.note) {
           const note = document.createElement("p");
@@ -12249,6 +12287,7 @@
           colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
           missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !isMadeUpPaint(pt) && !haveIt(pt); }),   // v58: made-up paints don't count
           noPaint: () => !step.paints.some(sp => paintById(sp.paint)),   // v62
+          optional: () => !!step.optional,   // RO1
         }), body);
         steps.appendChild(li);
       });
@@ -23940,12 +23979,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=175".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=176".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v175";
+    const APP_VERSION = "v176";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;

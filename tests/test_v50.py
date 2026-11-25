@@ -187,7 +187,11 @@ def main():
         check("the optional step is marked by its bar, and its text keeps full opacity",
               page.locator("li.optional-step").count() == 1 and page.evaluate("() => getComputedStyle(document.querySelector('li.optional-step')).opacity") == "1")
         lines.nth(2).click(); page.locator("[aria-controls=rstep-2-more]").click()
-        check("optional is shown behind More options", "optional" in page.locator("#rstep-2-more .step-facts").inner_text())
+        # RO1: the word "Optional" moved from the facts line behind More options to the step's own folded line (so it is seen at a glance),
+        # and is no longer repeated in the open step's facts. The step is still clearly marked, and the other steps carry no such word.
+        check("optional is shown on the step line, not repeated behind More options",
+              lines.nth(2).locator(".step-optional").inner_text() == "Optional" and "optional" not in page.locator("#rstep-2-more .step-facts").inner_text().lower()
+              and lines.nth(0).locator(".step-optional").count() == 0)
         labels = page.evaluate("() => [...document.querySelectorAll('#recipe-page [aria-label], #recipe-list [aria-label]')].map(e => e.getAttribute('aria-label')).join(' | ')")
         check("no paint names in any aria-label", not any(n.lower() in labels.lower() for n in NAMES), labels)
         # a step with a missing paint shows a mark on its closed line
