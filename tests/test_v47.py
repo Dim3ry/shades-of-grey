@@ -337,7 +337,17 @@ def main():
         sp.goto(t.BASE + "manifest.json")
         sp.evaluate("localStorage.setItem('shades-of-grey-settings', JSON.stringify({ theme: 'classic' }))")
         sp.goto(URL)
-        sp.wait_for_function("() => navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
+        # TV1: sw.js saves "./privacy" at install; a plain "python3 -m http.server" answers 404 for it (only tests/run_all.py's server,
+        # and the real host, map /privacy to privacy.html), so the install fails, the helper goes "redundant" and never takes over.
+        # That looked like a bare 15 s timeout. Same wait as before, but the failure now says which of the two it is.
+        try:
+            sp.wait_for_function("() => navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
+        except Exception:
+            privacy_status = sp.evaluate("fetch('privacy').then(r => r.status).catch(() => 0)")
+            if privacy_status != 200:
+                raise AssertionError("service worker could not install: this server answers " + str(privacy_status) + " for /privacy, which sw.js saves at install. "
+                                     "Use the server tests/run_all.py starts (it maps /privacy to privacy.html), not a plain python3 -m http.server.")
+            raise
         leave_launch(sp)   # U4b: tap through the start page
         sp.reload(); sp.wait_for_function("() => typeof APP_VERSION === 'string'")
         sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(300)
