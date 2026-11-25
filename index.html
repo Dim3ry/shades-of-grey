@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=177"></script>
-  <script src="early.js?v=177"></script>
+  <script src="mentor-looks.js?v=178"></script>
+  <script src="early.js?v=178"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1641,6 +1641,9 @@
     .status-chip { border-color: var(--chip-colour); }
     .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: var(--chip-on); border-color: var(--chip-colour); }
     .status-row { margin-top: 12px; }
+    /* PW1: the five Status buttons wrap onto rows instead of squeezing, so no word is ever split. */
+    .status-row .status-chips { flex-wrap: wrap; overflow: visible; contain: none; gap: 8px; margin-left: 0 !important; margin-right: 0 !important; padding: 0; -webkit-mask-image: none; mask-image: none; }
+    .status-row .status-chips > .status-chip { flex: 1 1 auto; min-width: max-content; max-width: none; white-space: nowrap; overflow-wrap: normal; word-break: keep-all; min-height: 44px; scroll-snap-align: none; }
     .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: var(--radius-control); font-size: 0.75rem; border: 1px solid; vertical-align: middle; white-space: nowrap; }
     .status-pill.s-owned { color: var(--good); border-color: var(--good); }
     .status-pill.s-low { color: var(--warn); border-color: var(--warn); }
@@ -3856,7 +3859,7 @@
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li id="help-recipe-menu">On an open recipe, <strong>Edit</strong> by the title opens a short list: edit the steps and paints, duplicate it, copy it as text or delete it. <strong>Add to scheme</strong>, next to Add to shopping list, ticks which schemes hold the recipe. Nothing changes until you press <strong>Done</strong>.</li>
             <li><strong>Your Palette</strong> (top of the Painting tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
-            <li id="help-palette-swatches"><strong>List or Swatches</strong> (top of Your Palette): Swatches shows each paint as a small colour tile with a mark for its status. Tap a tile to open that paint. In an open paint, <strong>More options</strong> holds its name, brand, colour, Merge and Remove.</li>
+            <li id="help-palette-swatches"><strong>List or Swatches</strong> (top of Your Palette): Swatches is what you see first: each paint is a small colour tile with a mark for its status, and List is one tap away. Tap a tile to open that paint. In an open paint, <strong>More options</strong> holds its name, brand, colour, Merge and Remove.</li>
             <li>On a wide screen, a paint you tap in Your Palette opens in a pane beside the list. You can keep several open and press <strong>Close</strong> on each.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
@@ -4256,7 +4259,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=177" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=178" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4269,17 +4272,17 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=177"></script>
-  <script src="schemes.js?v=177"></script>
-  <script src="detail-recipes.js?v=177"></script>
-  <script src="basing-tips.js?v=177"></script>
-  <script src="mentor-tips.js?v=177"></script>
-  <script src="guides-data.js?v=177"></script>
-  <script src="guides-groups.js?v=177"></script>
-  <script src="mentor-data.js?v=177"></script>
-  <script src="mentor-engine.js?v=177"></script>
-  <script src="where-to-buy.js?v=177"></script>
-  <script src="changelog.js?v=177"></script>
-  <script src="app.js?v=177"></script>
+  <script src="colour.js?v=178"></script>
+  <script src="schemes.js?v=178"></script>
+  <script src="detail-recipes.js?v=178"></script>
+  <script src="basing-tips.js?v=178"></script>
+  <script src="mentor-tips.js?v=178"></script>
+  <script src="guides-data.js?v=178"></script>
+  <script src="guides-groups.js?v=178"></script>
+  <script src="mentor-data.js?v=178"></script>
+  <script src="mentor-engine.js?v=178"></script>
+  <script src="where-to-buy.js?v=178"></script>
+  <script src="changelog.js?v=178"></script>
+  <script src="app.js?v=178"></script>
 </body>
 </html>

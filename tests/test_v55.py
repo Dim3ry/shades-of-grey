@@ -100,6 +100,7 @@ def open_palette(page, paints=None, mode="dark", width=390):
     fold_opener.open_cards_on_load(page)
     tab(page, "recipes")
     page.click('#recipe-seg button[data-view="palette"]')
+    page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
     page.wait_for_timeout(200)
 
 def open_editor_ideas(page, mode="dark", width=390):

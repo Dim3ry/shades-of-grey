@@ -360,6 +360,7 @@ def main():
             "recipes": [], "schemes": [], "v15": True}
         seed(page, units=[], settings=full_settings(), book=book)
         page.evaluate("settings.recipeView = 'palette'; showTab('recipes'); render();")
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         page.wait_for_timeout(150)
         pills = page.evaluate("""() => [...document.querySelectorAll('.paint-text .status-pill')].map(p => {
             const range = document.createRange(); range.selectNodeContents(p);

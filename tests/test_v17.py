@@ -98,6 +98,7 @@ with sync_playwright() as pw:
         load(page, V17_BOOK)
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='palette']")
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         def open_paint(name):
             page.locator(".paint-item", has_text=name).locator("button.paint-head").click()
         # v80: from 900 px an open paint's details are a card in the Palette side pane, not under the paint in the list.
@@ -114,6 +115,7 @@ with sync_playwright() as pw:
         check(f"{size}: cleared status is saved as blank", page.evaluate("'status' in book.paints.find(p => p.name === 'Abaddon Black')") is False)
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='palette']")
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         open_paint("Nuln Oil")
         spare = box("Nuln Oil").locator(".spare-tick input")
         check(f"{size}: running low shows spare in stock tick", spare.count() == 1)
@@ -173,6 +175,7 @@ with sync_playwright() as pw:
         # ---- Shopping list ----
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='palette']")
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         text = page.evaluate("shoppingText(shoppingItems())")
         check(f"{size}: shopping list text", text == EXPECTED_SHOPPING, text)

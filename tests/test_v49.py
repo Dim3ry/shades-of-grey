@@ -101,8 +101,10 @@ def main():
         page.click('nav button[data-tab="recipes"]')
         page.get_by_text("Your Palette").first.click()
         sw_btn = page.locator('#palette-layout [data-layout="swatches"]')
-        check("a List | Swatches switch is there, List first", page.locator("#palette-layout .chip").count() == 2
-              and page.locator('#palette-layout [data-layout="list"]').get_attribute("aria-pressed") == "true")
+        # PW1 (v178): Swatches is now the layout Your Palette opens in (it was List); the checks below that use the list tap List first.
+        check("a List | Swatches switch is there, Swatches first", page.locator("#palette-layout .chip").count() == 2
+              and page.locator('#palette-layout [data-layout="swatches"]').get_attribute("aria-pressed") == "true")
+        page.locator('#palette-layout [data-layout="list"]').click()
         n = page.locator(".paint-head").count()
         page.locator(".paint-head").first.click()
         page.locator(".status-chip").filter(has_text="Owned").first.click()

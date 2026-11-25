@@ -108,6 +108,7 @@ def wide_checks(page, w):
     c = page.evaluate(COVERED, "#unit-split > .layout-side")
     check(f"{w} ... nothing drawn in the pane is under the bar or the Mentor button", not c["under"], c["under"])
     page.evaluate("() => { settings.recipeView = 'palette'; showTab('recipes'); renderRecipes(); }")
+    page.evaluate("() => { const b = document.querySelector('#palette-layout [data-layout=list]'); if (b) b.click(); }")   # PW1 (v178): Your Palette now opens in Swatches; tests of the list tap List first
     quiet(page)
     if not page.locator("#palette-split > .layout-side .unit-side-card").count():
         page.evaluate("() => [...document.querySelectorAll('#palette-view .paint-item')].slice(0, 3).forEach(i => (i.querySelector('button, [role=button]') || i).click())")

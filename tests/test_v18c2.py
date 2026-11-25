@@ -68,6 +68,7 @@ def open_paint(page, pid):
     """Your Palette, with this paint opened."""
     page.evaluate("""pid => { settings.recipeView = 'palette'; showTab('recipes');
                      openPaintIds.clear(); openPaintIds.add(pid); render(); }""", pid)
+    page.evaluate("() => { const b = document.querySelector('#palette-layout [data-layout=list]'); if (b) b.click(); }")   # PW1 (v178): Your Palette now opens in Swatches; tests of the list tap List first
     page.evaluate("() => document.querySelectorAll('.paint-options .more-info-button[aria-expanded=false]').forEach(b => b.click())")   # v49: More options
     page.wait_for_timeout(50)
 

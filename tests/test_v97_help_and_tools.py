@@ -91,6 +91,7 @@ def main():
 
         print("\n--- 3. Repointed link ---")
         t.load(page, paints=PAINTS, settings={"tab": "recipes", "recipeView": "palette", "examplesChecked": True})
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; this test is about the list, so it taps List first
         page.click('#paint-list .paint-head:has-text("Macragge Blue")')
         page.locator('#paint-list button.ideas-for[data-ideas-for="1"]').click()
         page.wait_for_selector("#cmp-focus button.ideas-open[data-detail]")

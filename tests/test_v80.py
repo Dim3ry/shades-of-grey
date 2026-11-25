@@ -50,6 +50,7 @@ def main():
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
         load(page, paints=PAINTS, recipes=RECIPES, units=[unit(1, "Troop A", "Gloom Legion")], settings={"recipeView": "palette"})
         page.click('nav button[data-tab="recipes"], nav button[data-tab="recipes"]')
+        page.click('#palette-layout [data-layout="list"]')   # PW1 (v178): Your Palette now opens in Swatches; sections 1 to 3 are about the list
 
         print("\n--- 1. Under 900 px: unchanged ---")
         for scheme in ("dark", "light"):
