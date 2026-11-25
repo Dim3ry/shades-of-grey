@@ -11986,32 +11986,54 @@
       draw();
       return button;
     }
-    // RO1: "Mark owned" under a paint in an open recipe step. Same change as the Owned status button, with Undo. The page is drawn
-    // again in place: open steps stay open, the scroll position is put back and focus goes to the paint's line.
-    function buildMarkOwned(paint, lineId) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "plain-button mark-owned";
-      b.textContent = "Mark owned";
-      b.setAttribute("aria-describedby", lineId);   // reads the paint's line after the button's words
-      b.addEventListener("click", () => {
-        const before = JSON.stringify(book);
-        setStatusByHand(paint, "owned");
-        const undo = bookUndo(before);
-        const ok = save();
-        const y = window.scrollY;
-        const redraw = () => {
-          renderRecipes(); updateBasket(); refreshShopping(); updateShopFoldouts();
-          window.scrollTo(0, y);
-        };
-        redraw();
-        const next = recipePage.querySelector(`.paint-line[data-paint-id="${paint.id}"]`);
-        if (next) next.focus({ preventScroll: true });
-        if (ok) {
-          showToast(`${paint.name} marked owned`, () => { undo(); render(); updateBasket(); updateShopFoldouts(); });
-        } else showNotSaved();
+    // RO1, RO2: under a paint in an open recipe step, a one-tap "Mark owned" (paints you do not have) and a small status menu with
+    // all five statuses. Both make the same change as the status buttons in Your Palette (setStatusByHand), with Undo. The page is drawn
+    // again in place: open steps stay open, the scroll position is put back and focus goes back to the control used.
+    function setRecipeStatus(paint, key, focusSel) {
+      const before = JSON.stringify(book);
+      setStatusByHand(paint, key);
+      const undo = bookUndo(before);
+      const ok = save();
+      const y = window.scrollY;
+      renderRecipes(); updateBasket(); refreshShopping(); updateShopFoldouts();
+      window.scrollTo(0, y);
+      const next = recipePage.querySelector(focusSel(paint));
+      if (next) next.focus({ preventScroll: true });
+      if (ok) {
+        showToast(`${paint.name} is now ${statusLabel(key).toLowerCase()}`, () => { undo(); render(); updateBasket(); updateShopFoldouts(); });
+      } else showNotSaved();
+    }
+    function buildPaintStatusRow(paint, lineId) {
+      const row = document.createElement("div");
+      row.className = "paint-status-row";
+      if (!haveIt(paint)) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "plain-button mark-owned";
+        b.textContent = "Mark owned";
+        b.setAttribute("aria-describedby", lineId);   // reads the paint's line after the button's words
+        b.addEventListener("click", () => setRecipeStatus(paint, "owned", p => `.paint-line[data-paint-id="${p.id}"]`));
+        row.appendChild(b);
+      }
+      const sel = document.createElement("select");
+      sel.className = "paint-status-select";
+      sel.dataset.paintId = String(paint.id);
+      sel.setAttribute("aria-label", "Status");
+      sel.setAttribute("aria-describedby", lineId);   // reads the paint's line after the label
+      const current = paintStatus(paint) || "notowned";
+      for (const s of PAINT_STATUSES) {
+        const o = document.createElement("option");
+        o.value = s.key;
+        o.textContent = s.label;
+        sel.appendChild(o);
+      }
+      sel.value = current;
+      sel.addEventListener("change", () => {
+        if (sel.value === current) return;   // Not owned on an unset paint does nothing
+        setRecipeStatus(paint, sel.value, p => `.paint-status-select[data-paint-id="${p.id}"]`);
       });
-      return b;
+      row.appendChild(sel);
+      return row;
     }
     // The one-line key for the Have / Missing marks.
     function buildHaveKey() {
@@ -12261,7 +12283,7 @@
             line.appendChild(mix);
           }
           body.appendChild(line);
-          if (!isMadeUpPaint(paint) && !isExamplePaint(paint) && !haveIt(paint)) body.appendChild(buildMarkOwned(paint, line.id));   // RO1
+          if (!isMadeUpPaint(paint) && !isExamplePaint(paint)) body.appendChild(buildPaintStatusRow(paint, line.id));   // RO1, RO2
           const ideas = buildIdeasForButton(paint, { kind: "recipe", recipeId: recipe.id, step: i });   // v69
           if (ideas) body.appendChild(ideas);
         }
@@ -23979,12 +24001,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=176".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=177".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v176";
+    const APP_VERSION = "v177";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
