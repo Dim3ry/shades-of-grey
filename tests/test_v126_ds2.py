@@ -147,7 +147,10 @@ def main():
               page.evaluate("(() => { const c = document.querySelector('#unit-list li.unit[data-id=\"4\"]'); return !!c && c.textContent.includes('Renamed squad') && !!c.querySelector('.panel'); })()"))
         page.evaluate("() => { book.recipes[0].name = 'Deep blue armour'; render(); }")
         open_unit_card(page, '#unit-list li.unit[data-id="1"]')   # MC1: the recipe buttons are inside the opened card
-        page.click('#unit-list li.unit[data-id="1"] .recipe-links button')
+        # UC1: the recipe buttons are gone; open the Recipes section, unroll the recipe and tap Open in Painting
+        page.click('#unit-list li.unit[data-id="1"] .recipes-head')
+        page.click('#unit-list li.unit[data-id="1"] .recipe-row')
+        page.click('#unit-list li.unit[data-id="1"] .recipe-open')
         quiet(page)
         check("a recipe link on a unit opens Recipes drawn with the change", "Deep blue armour" in page.text_content("#view-recipes"))
 

@@ -177,20 +177,20 @@ def main():
         seed(page)
         open_unit(page, 1)
         check("batch unit: stage, photos, recipes, paint notes, Edit details, then the buttons",
-              order(page, 1) == ["stage", "track", "photos", "recipes", "notes", "edit", "buttons"], order(page, 1))
+              order(page, 1) == ["stage", "track", "photos", "notes", "edit", "buttons"], order(page, 1))
         open_unit(page, 2)
-        check("model-by-model unit: stage, each model's stage, photos, recipes, notes, Edit details, buttons",
-              order(page, 2) == ["stage", "track", "each", "photos", "recipes", "notes", "edit", "buttons"], order(page, 2))
+        check("model-by-model unit: stage, each model's stage, photos, notes, Edit details, buttons",
+              order(page, 2) == ["stage", "track", "each", "photos", "notes", "edit", "buttons"], order(page, 2))
         open_unit(page, 3)
         check("a one-model unit has the same order as a batch unit, without the v61 Track button",
-              order(page, 3) == ["stage", "photos", "recipes", "notes", "edit", "buttons"], order(page, 3))
+              order(page, 3) == ["stage", "photos", "notes", "edit", "buttons"], order(page, 3))
         check("the fold holds the same boxes for a one-model unit (v61: no Track tick in it)", folded_labels(page, 3) == FOLDED, folded_labels(page, 3))
         open_unit(page, 1)   # MC1: opening units 2 and 3 closed unit 1 (one card is open at a time)
         top = page.evaluate("""(sel) => { const p = document.querySelector(sel);
             const y = (q) => p.querySelector(q).getBoundingClientRect().top;
-            return [y('select.jump-stage'), y('.gallery'), y('.panel-field:not(.gallery)'), y('textarea'), y('details.edit-details')]; }""",
+            return [y('select.jump-stage'), y('.gallery'), y('textarea'), y('details.edit-details')]; }""",
                             f"{card(1)} .panel")
-        check("on screen they really run top to bottom in that order", top == sorted(top) and len(set(top)) == 5, top)
+        check("on screen they really run top to bottom in that order", top == sorted(top) and len(set(top)) == 4, top)
 
         # ---------- 3. The fold ----------
         print("\n--- 3. The Edit details fold ---")
@@ -286,8 +286,11 @@ def main():
         page.wait_for_timeout(250)
         open_unit(page, 2)
         check("a single model's own up button still works", saved_unit(page, 2)["stages"][0] == first_before + 1, saved_unit(page, 2)["stages"])
-        check("the recipe menu is on show (no fold to open)",
-              page.locator(f'{card(2)} .panel select[aria-label^="Link a recipe"]').is_visible())
+        # UC1: the recipe menu moved out of the panel to the Recipes section under the stepper, which opens with one tap
+        page.locator(f'{card(2)} .recipes-head').click()
+        page.wait_for_timeout(250)
+        check("the recipe menu is in the Recipes section (UC1)",
+              page.locator(f'{card(2)} select[aria-label^="Add a recipe"]').is_visible())
         # Track each model on and off with real taps (v61: the button under the stage, not a tick in the fold).
         open_unit(page, 1)
         page.locator(f'{card(1)} .panel button.track-each').click()

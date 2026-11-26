@@ -4,7 +4,7 @@ New behaviour only:
 1. Stage change on the card: the old name slides out and the new one slides in; the stripe, the Up button and the bar segments
    fade from the old colour, the segments one after another; moving up pulses a ring once, back has none; all of it is put away after.
 2. A model row moves on its own: its name slides, no ring, no other row and not the card.
-3. Details: the panel grows and shrinks, the swatches pop in one by one and the whole thing ends under 300 ms even with 30 paints.
+3. Details: the panel grows and shrinks. (UC1: the Paints row and its swatch pop-in are gone, so those checks went with them.)
 4. Nothing moves for Undo, a bulk move, a page load or a stage move you did not tap on that unit.
 5. With reduced motion on: no animation of any kind, and no spacer left after closing.
 6. A unit of 100 models: the stage change and Details stay quick.
@@ -124,17 +124,13 @@ def main():
         open_card(page, 1)
         # T6: tap and read in one call
         a = page.evaluate("""() => { document.querySelector('li.unit[data-id="1"] .details-toggle').click(); const pn = document.querySelector('li.unit[data-id="1"] > .panel');
-            const sw = pn.querySelectorAll('.paints-preview .swatch'); const as = pn.getAnimations();
-            return { panel: as.length, overflow: pn.style.overflow, swatches: sw.length, popping: [...sw].filter(s => s.getAnimations().length).length }; }""")
-        check("the panel grows (clipped while it does) and the swatches pop in", a["panel"] >= 1 and a["overflow"] == "hidden" and a["swatches"] == 6 and a["popping"] == 6, a)
+            const as = pn.getAnimations();
+            return { panel: as.length, overflow: pn.style.overflow }; }""")
+        check("the panel grows (clipped while it does)", a["panel"] >= 1 and a["overflow"] == "hidden", a)
         page.wait_for_timeout(400)
         card(page, 1).locator(".details-toggle").click()
         page.wait_for_timeout(300)
         card(page, 1).locator(".details-toggle").click()
-        total = page.evaluate("""() => { const sw = document.querySelectorAll('li.unit[data-id="1"] .paints-preview .swatch, li.unit[data-id="1"] .paints-grid .swatch');
-            return { n: sw.length, ends: [...sw].map(s => s.getAnimations().map(a => { const t = a.effect.getComputedTiming(); return t.delay + t.duration; })).flat() }; }""")
-        check("30 paints in the unit's recipe: the six shown pop one after another, all over in under 300 ms",
-              total["n"] == 6 and total["ends"] and max(total["ends"]) < 300 and len(set(total["ends"])) == 6, total)
         wait_still(page)   # T6: was a fixed 0.4 s pause
         at_rest = page.evaluate("() => document.querySelector('li.unit[data-id=\"1\"] > .panel').style.overflow") + "|" + str(running(page))
         check("at rest the panel is not clipped and nothing is running", at_rest == "|0", at_rest)

@@ -70,7 +70,7 @@ def main():
         r = page.evaluate("""() => { const cards = [...document.querySelectorAll('#unit-list > li.unit')];
             const c = cards[0], info = c.querySelector('.info');
             return { n: cards.length, compact: cards.filter(li => li.classList.contains('compact')).length,
-                     inner: cards.filter(li => li.querySelector('.stepper, .details-toggle, .recipe-links, .panel, button')).length,
+                     inner: cards.filter(li => li.querySelector('.stepper, .details-toggle, .recipes-head, .panel, button')).length,
                      name: c.querySelector('.name').textContent, details: c.querySelector('.details').textContent,
                      stage: c.querySelector('.unit-sum .stage').textContent, pips: c.querySelectorAll('.unit-sum .pip').length,
                      dot: !!c.querySelector('.faction-dot'), role: info.getAttribute('role'), tab: info.tabIndex,
@@ -91,8 +91,8 @@ def main():
         print("\n--- 2. A tap opens one card and closes any other ---")
         page.locator(card(1) + " .details").click()
         settle(page)
-        check("a tap on the card opens it: stepper, recipe button and Details", is_open(page, 1)
-              and page.locator(card(1) + " .recipe-links button").count() == 1 and page.locator(card(1) + " .details-toggle").count() == 1)
+        check("a tap on the card opens it: stepper, Recipes section and Details", is_open(page, 1)
+              and page.locator(card(1) + " .recipes-head").count() == 1 and page.locator(card(1) + " .details-toggle").count() == 1)
         check("its header says it is open", page.get_attribute(card(1) + " .info", "aria-expanded") == "true")
         open_h = page.evaluate("(s) => document.querySelector(s).getBoundingClientRect().height", card(1))
         check("a closed card is well under half the open one's height", max(heights[1:5]) <= open_h / 2, (heights[:5], open_h))
