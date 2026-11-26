@@ -5,8 +5,8 @@ New behaviour only:
 2. Up and Back move the unit one stage, say where to ("Up to ...", "Back to ..."), and have Undo. Back is off at the first stage, up at the last.
 3. A unit tracked model by model: Back moves every model back one, with Undo.
 4. The old stage button (arrows icon) and the "Back a stage" button at the bottom of the details are gone.
-5. Details opens and says Hide; it holds Jump to stage first, then a Paints row (6 swatches at most, "Paints · N") that opens the full grid,
-   and the per-model rows still work inside it. A unit with no paints has no Paints row.
+5. Details opens and says Hide; it holds Jump to stage first, and the per-model rows still work inside it. (UC1: the Paints row has gone;
+   the unit's paints are in the Recipes section under the stepper, see test_v179_uc1.)
 6. 900, 1280 and 1920 px: Details opens the side pane with the same contents.
 7. 390 and 360 px, dark and light: no sideways scroll, tap targets 44 px or more.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -110,14 +110,8 @@ def main():
         order = page.evaluate("""() => [...document.querySelectorAll('li.unit[data-id="1"] .panel > *')].map(e =>
             e.querySelector && e.querySelector('select.jump-stage') ? 'jump' : e.classList.contains('unit-paints') ? 'paints' : e.classList.contains('edit-details') ? 'edit' : '')
             .filter(Boolean)""")
-        check("Jump to stage comes first, then Paints, then Edit details", order == ["jump", "paints", "edit"], order)
+        check("Jump to stage comes first, then Edit details, and there is no Paints row any more (UC1)", order == ["jump", "edit"], order)
         check("the stage menu is labelled Jump to stage", "Jump to stage" in c.locator(".panel > label").first.inner_text())
-        row = c.locator(".paints-row")
-        check("the Paints row shows 6 swatches at most and the count", row.inner_text().strip() == "Paints · 8" and row.locator(".swatch").count() == 6, row.inner_text())
-        check("the full grid is closed to start with", c.locator(".paints-grid").count() == 0 and row.get_attribute("aria-expanded") == "false")
-        row.click()
-        page.wait_for_timeout(250)
-        check("tapping the row opens the full grid of every paint", card(page, 1).locator(".paints-grid .swatch").count() == 8)
         card(page, 1).locator(".details-toggle").click()
         page.wait_for_timeout(250)
         check("Hide shuts the panel", card(page, 1).locator(".panel").count() == 0)
@@ -125,7 +119,7 @@ def main():
         open_card(page, 2)
         card(page, 2).locator(".details-toggle").click()
         page.wait_for_timeout(250)
-        check("a unit with no paints has no Paints row", card(page, 2).locator(".panel").count() == 1 and card(page, 2).locator(".paints-row").count() == 0)
+        check("Details opens for a unit with no recipes too, with no Paints row", card(page, 2).locator(".panel").count() == 1 and card(page, 2).locator(".paints-row").count() == 0)
 
         open_card(page, 4)
         card(page, 4).locator(".details-toggle").click()
@@ -141,8 +135,8 @@ def main():
             open_card(page, 1)   # MC1: from 900 px a tap on the closed card opens it and the side pane (its Details button did that before MC1)
             page.wait_for_timeout(300)
             side = page.locator("#unit-side")
-            check(f"{width} px: Details opens the side pane with Jump to stage and Paints",
-                  side.is_visible() and side.locator("select.jump-stage").count() == 1 and "Paints · 8" in side.inner_text(), side.inner_text()[:80])
+            check(f"{width} px: Details opens the side pane with Jump to stage",
+                  side.is_visible() and side.locator("select.jump-stage").count() == 1, side.inner_text()[:80])
             check(f"{width} px: the card keeps its stepper and no sideways scroll",
                   card(page, 1).locator(".stepper").is_visible() and no_sideways(page))
 
@@ -154,12 +148,10 @@ def main():
                 open_card(page, 1)
                 card(page, 1).locator(".details-toggle").click()
                 page.wait_for_timeout(250)
-                card(page, 1).locator(".paints-row").click()
-                page.wait_for_timeout(250)
-                # MC1: only the open card has these buttons (back, up, Details and Paints: 4; before MC1 every card had the first three)
-                sizes = page.evaluate("""() => [...document.querySelectorAll('li.unit .step-back, li.unit .up-button, li.unit .details-toggle, li.unit .paints-row')]
+                # MC1: only the open card has these buttons (back, up, Details and the Recipes header (UC1, was the Paints row): 4)
+                sizes = page.evaluate("""() => [...document.querySelectorAll('li.unit .step-back, li.unit .up-button, li.unit .details-toggle, li.unit .recipes-head')]
                     .map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })""")
-                check(f"{width} px {scheme}: no sideways scroll, back, up, Details and Paints are 44 px or more",
+                check(f"{width} px {scheme}: no sideways scroll, back, up, Details and Recipes are 44 px or more",
                       no_sideways(page) and len(sizes) == 4 and all(a >= 44 and b >= 44 for a, b in sizes), sizes)
 
         check("no page errors", not errors, errors)

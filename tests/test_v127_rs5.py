@@ -8,7 +8,7 @@
 4. Same-faction warning: shows with another scheme in the faction that attaches to new units, not with a different faction,
    in New and Edit. Unticked: saved, does not attach. Ticked: this one attaches, the other stops (kept, units untouched).
 5. Settings, Recipe preferences, "Ask for a faction on schemes": on by default; off hides the Faction row, a scheme saved
-   with no faction attaches to no new unit and can still be applied by hand from a unit's Link a recipe menu.
+   with no faction attaches to no new unit and can still be applied by hand from a unit's + Add recipe menu.
 6. An older backup (schemes with no "auto") loads as today: every scheme attaches.
 7. 390x844, 360x640 and 320x640, dark and light, 22 recipes and three schemes: no sideways scroll, tap targets 44 px.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -231,10 +231,10 @@ def main():
         check("...and attaches to no new unit", EYES[3] not in got, got)
         check("...its card shows no empty faction words", "No  units" not in page.locator("#scheme-list").inner_text()
               and "new units get it" not in page.locator("#scheme-list .scheme-item", has_text="Any unit look").inner_text())
-        page.evaluate("() => { openIds.add(3); showTab('units'); render(); }")
+        page.evaluate("() => { openIds.add(3); recipesOpenIds.add(3); showTab('units'); render(); }")
         quiet(page)
-        opts = page.evaluate("() => [...document.querySelector('select[aria-label^=\"Link a recipe to\"]').options].map(o => o.textContent)")
-        check("...and can be applied by hand from a unit's Link a recipe menu", "Apply scheme: Any unit look" in opts, opts)
+        opts = page.evaluate("() => [...document.querySelector('select[aria-label^=\"Add a recipe to\"]').options].map(o => o.textContent)")
+        check("...and can be applied by hand from a unit's + Add recipe menu", "Apply scheme: Any unit look" in opts, opts)
         page.evaluate("() => { showTab('settings'); openCardFold('recipe-prefs'); }")
         quiet(page)
         page.locator("#recipe-prefs-card #ask-scheme-faction").click()

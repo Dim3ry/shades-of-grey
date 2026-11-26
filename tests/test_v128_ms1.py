@@ -158,9 +158,10 @@ def main():
             return { same: JSON.stringify(ids) === JSON.stringify(want), n: ids.length,
                      colour: document.querySelector('li.unit[data-id="9"]').style.getPropertyValue('--faction-colour') }; }""")
         check("a new faction colour rebuilds exactly the cards of that faction, in its colour", r["same"] and r["n"] == 38 and r["colour"] == "#22aa66", r)
-        open_unit_card(page, 'li.unit[data-id="4"]')   # MC1: recipe buttons show on an open card; it is opened before the rename, so the redraw must update it
+        open_unit_card(page, 'li.unit[data-id="4"]')   # MC1: the recipes show on an open card; it is opened before the rename, so the redraw must update it
+        page.click('li.unit[data-id="4"] .recipes-head')   # UC1: the recipe names are in the Recipes section, which starts closed
         page.evaluate("() => { recipeById(101).name = 'Armour blue renamed'; render(); }")
-        chip = page.evaluate("""() => document.querySelector('li.unit[data-id="4"] .recipe-chip').textContent""")
+        chip = page.evaluate("""() => document.querySelector('li.unit[data-id="4"] .recipe-row-name').textContent""")
         check("a recipe's new name reaches the cards that link it", "Armour blue renamed" in chip, chip)
         page.evaluate(MARK)
         page.evaluate("() => { const i = models.findIndex(m => m.id === 10); models.splice(i, 1); render(); }")

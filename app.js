@@ -7578,7 +7578,11 @@
     // v23: units whose folded "Edit details" section is open. Not saved: only for this visit.
     // Every change redraws the panel, so without this the section would shut after each edit.
     const editOpenIds = new Set();
-    const paintsOpenIds = new Set();   // A3: units whose full Paints grid is showing in Details
+    // UC1: the Recipes section on an open unit card (kept while the app is open, never saved)
+    const recipesOpenIds = new Set();   // units whose Recipes section is unrolled
+    const recipeRowOpen = new Map();    // unit id -> the one recipe whose steps are showing
+    const recipesEditIds = new Set();   // units whose Recipes section shows the unlink buttons
+    let unitReturn = null;              // { id, y }: a recipe was opened from this unit's card; Back returns here
 
     function fillSelect(select, label, values, current) {
       select.innerHTML = "";
@@ -7794,7 +7798,8 @@
       if (model.id === justAddedId || (openIds.has(model.id) && !selectMode && !unitWide.matches)) return null;
       const photo = hasPhoto(model) ? (model.photo ? "old" : thumbUrls.get((mainPhoto(model) || {}).id) || "") : "";
       return JSON.stringify([model, shared, selectMode && ticked.has(model.id), openIds.has(model.id), cardOpen(model), factionColour(model.faction), photo,   // MC1: open or closed
-        recipesOf(model).map(r => [r.id, r.name, recipeColours(r)[0] || ""])],
+        recipesOf(model).map(r => [r.id, r.name, recipeColours(r)[0] || ""]),
+        recipesOpenIds.has(model.id) ? [recipeRowOpen.get(model.id) || 0, recipesEditIds.has(model.id), recipesOf(model).map(r => recipeColours(r))] : 0],   // UC1
         (k, v) => (k === "photo" && typeof v === "string" ? v.length + v.slice(-40) : v));
     }
     // The card for a unit: the kept one if nothing it shows has changed, otherwise a new one (which is kept from then on).
@@ -8045,7 +8050,7 @@
         const wasOpen = openIds.has(model.id);
         const panelNow = wasOpen ? document.querySelector(`li.unit[data-id="${model.id}"] > .panel`) : null;
         const heightNow = panelNow ? panelNow.offsetHeight : 0;
-        if (wasOpen) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
+        if (wasOpen) { openIds.delete(model.id); editOpenIds.delete(model.id); } else openIds.add(model.id);
         if (!unitWide.matches) openCardId = model.id;   // MC1: shutting Details leaves the card itself open
         // SM1 (Smooth4): opening or closing Details changes only this card (nothing is saved and no other card or section changes), so on a phone
         // only this card is drawn again; the side pane on a wide screen still takes the full redraw.
@@ -8082,14 +8087,8 @@
       head.appendChild(more);
       item.append(head, buildStepper(model, part));
 
-      // Its recipes, as buttons that open them.
-      const linked = recipesOf(model);
-      if (linked.length) {
-        const row = document.createElement("div");
-        row.className = "recipe-links";
-        for (const recipe of linked) row.appendChild(recipeChip(recipe, () => openRecipe(recipe.id)));
-        item.appendChild(row);
-      }
+      // UC1: its recipes, in one fold-away section under the stepper (closed to start with).
+      item.appendChild(buildRecipesSection(model));
 
       // v79: on a wide screen the details show in the side pane (renderUnitSide) and the card is just marked as open.
       if (isOpen && unitWide.matches) item.setAttribute("aria-current", "true");
@@ -8141,7 +8140,7 @@
       if (!model || selectMode) return;
       const wide = unitWide.matches;
       const changed = new Set([id]);
-      const shut = (other) => { openIds.delete(other); editOpenIds.delete(other); paintsOpenIds.delete(other); };
+      const shut = (other) => { openIds.delete(other); editOpenIds.delete(other); };
       if (open) {
         if (openCardId !== null && openCardId !== id) changed.add(openCardId);
         if (!wide) for (const other of openIds) if (other !== id) changed.add(other);
@@ -8353,7 +8352,7 @@
       stageMotion = reducedMotion() ? null : { ...before, dir };
       try { return redraw(); } finally { if (stageMotion) endStageMotion(); stageMotion = null; }
     }
-    // Mo2: the Details panel grows or shrinks, and the paint swatches pop in one after another (whole thing under 300 ms).
+    // Mo2: the Details panel grows or shrinks. (UC1: the paint swatches that used to pop in here have gone with the Paints row.)
     function animatePanel(id, opening, before) {
       if (reducedMotion() || !Element.prototype.animate) return;
       const card = [...document.querySelectorAll("li.unit")].find(li => li.dataset.id === String(id));
@@ -8368,10 +8367,6 @@
         panel.style.overflow = "hidden";
         const grow = panel.animate([{ height: "0px", paddingTop: "0px", marginTop: `${-gap}px`, opacity: 0 }, rest], { duration: ms, easing: "linear" });
         grow.onfinish = grow.oncancel = () => { panel.style.overflow = ""; };
-        const swatches = panel.querySelectorAll(".paints-preview .swatch, .paints-grid .swatch");
-        const step = swatches.length > 1 ? Math.min(30, 150 / (swatches.length - 1)) : 0;   // 150 ms of stagger at most, then a 120 ms pop
-        swatches.forEach((sw, k) => sw.animate([{ transform: "scale(0.3)", opacity: 0 }, { transform: "none", opacity: 1 }],
-          { duration: motionMs("--motion-fast"), delay: k * step, easing: "linear", fill: "backwards" }));
       } else if (before) {
         // The panel is already gone from the redrawn card: a blank, hidden space of its old height shrinks away.
         const ghost = document.createElement("div");
@@ -8424,55 +8419,204 @@
       return row;
     }
 
-    // A3: every paint a unit's linked recipes use, each once, in recipe order.
-    function unitPaints(model) {
-      const paints = [];
-      for (const recipe of recipesOf(model)) for (const step of recipe.steps) for (const sp of step.paints) {
-        const paint = paintById(sp.paint);
-        if (paint && !paints.includes(paint)) paints.push(paint);
-      }
-      return paints;
+    // ----- UC1: the Recipes section of an open unit card -----
+    // One fold-away section under the stepper: "Recipes · N". Inside, one row per linked recipe (name, a few paint dots, an arrow).
+    // A tap unrolls that recipe's steps in place (one at a time); "Open in Painting" goes to the recipe and Back comes back here.
+    // "+ Add recipe" is the old link menu (a recipe, "Apply scheme: ...", or a new recipe); Edit shows an unlink button on each row.
+    const RECIPE_DOTS = 5;
+    function redrawUnitCard(model, focusSelector) {
+      const card = !unitWide.matches && [...list.children].find(li => li.dataset.id === String(model.id));
+      if (card) card.replaceWith(cardFor(model, sharedCardKey(), true)); else render();
+      if (focusSelector) { const again = document.querySelector(`li.unit[data-id="${model.id}"] ${focusSelector}`); if (again) again.focus({ preventScroll: true }); }
     }
 
-    // A3: the Paints row in Details: up to 6 swatches, "Paints · N" and a chevron; it opens the full swatch grid
-    // underneath. No row for a unit that has no paints yet.
-    function buildPaintsRow(model) {
-      const paints = unitPaints(model);
-      if (!paints.length) return null;
-      const open = paintsOpenIds.has(model.id);
-      const box = document.createElement("div");
-      box.className = "unit-paints";
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "paints-row";
-      row.setAttribute("aria-expanded", open);
-      const preview = document.createElement("span");
-      preview.className = "paints-preview";
-      for (const paint of paints.slice(0, 6)) preview.appendChild(makeSwatch(paint.colour));
-      const label = document.createElement("span");
-      label.className = "paints-label";
-      label.textContent = `Paints · ${paints.length}`;
-      row.append(preview, label, chevron(open ? "up" : "down"));
-      row.addEventListener("click", () => {
-        if (paintsOpenIds.has(model.id)) paintsOpenIds.delete(model.id); else paintsOpenIds.add(model.id);
-        render();
-      });
-      box.appendChild(row);
-      if (open) {
-        const grid = document.createElement("ul");
-        grid.className = "paints-grid";
-        grid.setAttribute("aria-label", `Paints of ${displayName(model)}`);
-        for (const paint of paints) {
-          const li = document.createElement("li");
-          li.title = [paint.brand, paint.name].filter(Boolean).join(" ");
-          li.setAttribute("aria-label", li.title);
-          li.setAttribute("role", "img");
-          li.appendChild(makeSwatch(paint.colour));
-          grid.appendChild(li);
+    function buildRecipeSteps(recipe) {
+      const steps = document.createElement("ol");
+      steps.className = "unroll-steps";
+      recipe.steps.forEach((step, i) => {
+        const li = document.createElement("li");
+        if (step.optional) li.classList.add("optional-step");
+        const head = document.createElement("div");
+        head.className = "unroll-head";
+        const technique = step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step";
+        head.textContent = `${i + 1}. ${technique}${step.optional ? " (optional)" : ""}`;
+        li.appendChild(head);
+        const mixed = step.paints.length > 1;
+        for (const sp of step.paints) {
+          const paint = paintById(sp.paint);
+          if (!paint) continue;
+          const line = document.createElement("div");
+          line.className = "paint-line";
+          line.append(makeSwatch(paint.colour), paint.name);
+          if (sp.mix !== null && (mixed || sp.mix !== 100)) {
+            const mix = document.createElement("span");
+            mix.className = "mix";
+            mix.textContent = `${sp.mix}%`;
+            line.appendChild(mix);
+          }
+          li.appendChild(line);
         }
-        box.appendChild(grid);
+        const facts = document.createElement("p");
+        facts.className = "step-facts";
+        facts.textContent = [coatsText(step.coats), step.ratio ? `mix ${step.ratio}` : ""].filter(Boolean).join(" · ");
+        li.appendChild(facts);
+        if (step.note) {
+          const note = document.createElement("p");
+          note.className = "step-note";
+          note.textContent = step.note;
+          li.appendChild(note);
+        }
+        steps.appendChild(li);
+      });
+      return steps;
+    }
+
+    // The old "Link a recipe..." menu, as the "+ Add recipe" button: same choices, including a faction's schemes and a new recipe.
+    function buildAddRecipe(model, linked) {
+      const picker = document.createElement("select");
+      picker.className = "recipes-add";
+      picker.setAttribute("aria-label", `Add a recipe to ${displayName(model)}`);
+      picker.add(new Option("+ Add recipe", ""));
+      book.recipes.filter(r => !linked.includes(r))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(r => picker.add(new Option(r.part ? `${r.name} (${r.part})` : r.name, r.id)));
+      // This faction's painting schemes that the unit doesn't fully have yet. RS5: schemes with no faction are listed for every unit,
+      // so they can still be applied by hand.
+      for (const scheme of [...schemesFor(model.faction), ...book.schemes.filter(s => !String(s.faction || "").trim())]) {
+        if (scheme.recipes.some(id => recipeById(id) && !(model.recipes || []).includes(id))) {
+          picker.add(new Option(`Apply scheme: ${scheme.name}`, `scheme:${scheme.id}`));
+        }
       }
+      picker.add(new Option("New recipe for this unit", "new"));
+      picker.addEventListener("change", () => {
+        if (picker.value === "new") { picker.value = ""; startNewRecipe(model.id); return; }
+        if (picker.value.startsWith("scheme:")) {
+          const scheme = book.schemes.find(s => s.id === Number(picker.value.slice(7)));
+          picker.value = "";
+          if (scheme) applyScheme(scheme, [model]);
+          return;
+        }
+        if (picker.value) {
+          const id = Number(picker.value);
+          linkRecipe(model, id);
+          recipesOpenIds.add(model.id);
+          save();
+          render();
+        }
+      });
+      return picker;
+    }
+
+    function buildRecipesSection(model) {
+      const linked = recipesOf(model);
+      const open = recipesOpenIds.has(model.id);
+      const box = document.createElement("div");
+      box.className = "unit-recipes";
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = "recipes-head";
+      head.setAttribute("aria-expanded", open);
+      const label = document.createElement("span");
+      label.className = "recipes-label";
+      label.textContent = `Recipes · ${linked.length}`;
+      head.append(label, chevron(open ? "up" : "down"));
+      head.addEventListener("click", () => {
+        if (open) { recipesOpenIds.delete(model.id); recipesEditIds.delete(model.id); } else recipesOpenIds.add(model.id);
+        redrawUnitCard(model, ".recipes-head");
+      });
+      box.appendChild(head);
+      if (!open) return box;
+
+      const openRecipeHere = recipeRowOpen.get(model.id);
+      const editing = recipesEditIds.has(model.id) && linked.length > 0;
+      const rows = document.createElement("ul");
+      rows.className = "recipe-rows";
+      for (const recipe of linked) {
+        const li = document.createElement("li");
+        const isOpen = openRecipeHere === recipe.id;
+        const line = document.createElement("div");
+        line.className = "recipe-row-line";
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "recipe-row";
+        row.dataset.recipe = String(recipe.id);
+        row.setAttribute("aria-expanded", isOpen);
+        const name = document.createElement("span");
+        name.className = "recipe-row-name";
+        name.textContent = recipe.name;
+        const dots = document.createElement("span");
+        dots.className = "recipe-row-dots";
+        dots.setAttribute("aria-hidden", "true");
+        for (const c of recipeColours(recipe).slice(0, RECIPE_DOTS)) dots.appendChild(makeSwatch(c));
+        row.append(name, dots, chevron(isOpen ? "up" : "down"));
+        row.addEventListener("click", () => {
+          if (isOpen) recipeRowOpen.delete(model.id); else recipeRowOpen.set(model.id, recipe.id);
+          redrawUnitCard(model, `.recipe-row[data-recipe="${recipe.id}"]`);
+        });
+        line.appendChild(row);
+        if (editing) {
+          const x = document.createElement("button");
+          x.type = "button";
+          x.className = "unlink recipe-unlink";
+          x.textContent = "✕";
+          x.setAttribute("aria-label", `Unlink ${recipe.name}`);
+          x.addEventListener("click", () => {
+            unlinkRecipe(model, recipe.id);
+            if (recipeRowOpen.get(model.id) === recipe.id) recipeRowOpen.delete(model.id);
+            save();
+            render();
+          });
+          line.appendChild(x);
+        }
+        li.appendChild(line);
+        if (isOpen) {
+          const unroll = document.createElement("div");
+          unroll.className = "recipe-unroll";
+          if (recipe.steps.length) unroll.appendChild(buildRecipeSteps(recipe));
+          const go = document.createElement("button");
+          go.type = "button";
+          go.className = "plain-button recipe-open";
+          go.textContent = "Open in Painting";
+          go.setAttribute("aria-label", `Open ${recipe.name} in Painting`);
+          go.addEventListener("click", () => openRecipe(recipe.id, model.id));
+          unroll.appendChild(go);
+          li.appendChild(unroll);
+        }
+        rows.appendChild(li);
+      }
+      if (linked.length) box.appendChild(rows);
+
+      const foot = document.createElement("div");
+      foot.className = "recipes-foot";
+      foot.appendChild(buildAddRecipe(model, linked));
+      if (linked.length) {
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "plain-button recipes-edit";
+        edit.textContent = editing ? "Done" : "Edit";
+        edit.addEventListener("click", () => {
+          if (editing) recipesEditIds.delete(model.id); else recipesEditIds.add(model.id);
+          redrawUnitCard(model, ".recipes-edit");
+        });
+        foot.appendChild(edit);
+      }
+      box.appendChild(foot);
       return box;
+    }
+
+    // UC1: Back from a recipe opened off a unit's card: the same unit, its card still open, at the same place on the screen.
+    function backToUnit() {
+      const back = unitReturn;
+      unitReturn = null;
+      openRecipeId = null;
+      recipeDraft = null;
+      renderRecipes();
+      if (!back) { window.scrollTo(0, 0); return; }
+      openCardId = back.id;
+      render();
+      showTab("units");
+      unitsUpTo(back.id);
+      window.scrollTo(0, back.y);
     }
 
     // ----- M2: the model rows of a unit tracked model by model -----
@@ -8742,53 +8886,8 @@
 
       if (model.each) panel.appendChild(buildEachRows(model));   // M2: a stepper on every model's row
 
-      // A3: the unit's paints sit behind one row (6 swatches and a count) that opens the full grid.
-      const paintsRow = buildPaintsRow(model);
-      if (paintsRow) panel.appendChild(paintsRow);
-
       // Photos come straight after the stage (v23), then recipes, then the scheme notes.
       panel.appendChild(buildGallery(model));
-
-      // Paint recipes: linked ones (tap to open, ✕ to unlink), and a menu to link more.
-      const recipeField = document.createElement("div");
-      recipeField.className = "panel-field";
-      recipeField.append("Paint recipes");
-      const linkedRecipes = recipesOf(model);
-      if (linkedRecipes.length) {
-        const linkedList = document.createElement("div");
-        linkedList.className = "linked-list";
-        for (const recipe of linkedRecipes) {
-          linkedList.appendChild(linkedChip(recipeChip(recipe, () => openRecipe(recipe.id)),
-            `Unlink ${recipe.name}`, () => { unlinkRecipe(model, recipe.id); render(); }));
-        }
-        recipeField.appendChild(linkedList);
-      }
-      const recipePicker = document.createElement("select");
-      recipePicker.setAttribute("aria-label", `Link a recipe to ${displayName(model)}`);
-      recipePicker.add(new Option(linkedRecipes.length ? "Link another recipe…" : "Link a recipe…", ""));
-      book.recipes.filter(r => !linkedRecipes.includes(r))
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .forEach(r => recipePicker.add(new Option(r.part ? `${r.name} (${r.part})` : r.name, r.id)));
-      // This faction's painting schemes that the unit doesn't fully have yet. RS5: schemes with no faction are listed for every unit,
-      // so they can still be applied by hand.
-      for (const scheme of [...schemesFor(model.faction), ...book.schemes.filter(s => !String(s.faction || "").trim())]) {
-        if (scheme.recipes.some(id => recipeById(id) && !(model.recipes || []).includes(id))) {
-          recipePicker.add(new Option(`Apply scheme: ${scheme.name}`, `scheme:${scheme.id}`));
-        }
-      }
-      recipePicker.add(new Option("＋ New recipe for this unit", "new"));
-      recipePicker.addEventListener("change", () => {
-        if (recipePicker.value === "new") { recipePicker.value = ""; startNewRecipe(model.id); return; }
-        if (recipePicker.value.startsWith("scheme:")) {
-          const scheme = book.schemes.find(s => s.id === Number(recipePicker.value.slice(7)));
-          recipePicker.value = "";
-          if (scheme) applyScheme(scheme, [model]);
-          return;
-        }
-        if (recipePicker.value) { linkRecipe(model, Number(recipePicker.value)); render(); }
-      });
-      recipeField.appendChild(recipePicker);
-      panel.appendChild(recipeField);
 
       panel.appendChild(noteLabel);
 
@@ -11901,8 +12000,9 @@
     }
     function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps, t: d.quick ? d.quick.text : undefined }); }   // RS3b: t = the quick box
 
-    function openRecipe(id) {
+    function openRecipe(id, fromUnit) {
       whenOkToLeaveDraft(() => {
+        unitReturn = fromUnit ? { id: fromUnit, y: window.scrollY } : null;   // UC1
         // LQ1 (LQ2): opened from a list on the Painting tab: remember where that list was, for Back
         lqListPlace = settings.tab === "recipes" && openRecipeId === null && !recipeDraft && !views.recipes.classList.contains("hidden")
           ? { view: settings.recipeView || "recipes", y: window.scrollY } : null;
@@ -12214,7 +12314,9 @@
       back.className = "link-button";
       back.textContent = settings.recipeView === "palette" ? "← Your Palette"
                        : settings.recipeView === "schemes" ? "← Schemes" : "← All recipes";
-      back.addEventListener("click", () => { openRecipeId = null; renderRecipes(); });
+      const cameFrom = unitReturn && models.find(m => m.id === unitReturn.id);   // UC1: opened from a unit's card
+      if (cameFrom) back.textContent = `← ${displayName(cameFrom)}`;
+      back.addEventListener("click", () => { if (cameFrom) backToUnit(); else { openRecipeId = null; renderRecipes(); } });
       recipePage.appendChild(back);
 
       // Name, part and notes.
@@ -24001,12 +24103,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=178".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=179".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v178";
+    const APP_VERSION = "v179";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -24733,7 +24835,7 @@
             window.scrollTo(0, 0);
           });
         };
-        if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); if (!lqListBack) window.scrollTo(0, 0); };   // LQ1 (LQ2): unless the list went back to its place
+        if (openRecipeId !== null) return () => { if (unitReturn && models.some(m => m.id === unitReturn.id)) { backToUnit(); return; } openRecipeId = null; renderRecipes(); if (!lqListBack) window.scrollTo(0, 0); };   // UC1: from a unit card, Back goes to that unit   // LQ1 (LQ2): unless the list went back to its place
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint

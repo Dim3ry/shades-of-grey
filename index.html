@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=178"></script>
-  <script src="early.js?v=178"></script>
+  <script src="mentor-looks.js?v=179"></script>
+  <script src="early.js?v=179"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -888,13 +888,26 @@
     .step-back { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
     .up-button { background: var(--stage-colour); color: var(--background); border: 2px solid var(--stage-colour); }
     .step-back .chev, .up-button .chev { width: 26px; height: 26px; }
-    .unit-paints { display: grid; gap: 8px; }
-    .paints-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 10px; text-align: left;
+    /* UC1: the Recipes section on an open unit card (replaces the Paints row and the Paint recipes list). */
+    .unit-recipes { flex-basis: 100%; display: grid; gap: 8px; }
+    .recipes-head, .recipe-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 10px; text-align: left; width: 100%;
       background: transparent; color: var(--text); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control); }
-    .paints-preview { display: flex; gap: 4px; }
-    .paints-label { flex: 1; font-size: 0.9375rem; }
-    .paints-grid { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-    .paints-grid .swatch { width: 28px; height: 28px; }
+    .recipes-label, .recipe-row-name { flex: 1; min-width: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
+    .recipe-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .recipe-row-line { display: flex; align-items: stretch; }
+    .recipe-row-line .recipe-row { flex: 1; min-width: 0; }
+    .recipe-row-line .recipe-unlink { min-width: 44px; padding: 0 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control); margin-left: 6px; background: transparent; }
+    .recipe-row-dots { display: flex; gap: 3px; }
+    .recipe-row-dots .swatch { width: 14px; height: 14px; }
+    .recipe-unroll { display: grid; gap: 8px; padding: 8px 4px 4px 12px; border-left: 3px solid var(--accent); margin: 6px 0 2px 6px; }
+    .unroll-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .unroll-head { font-weight: 600; font-size: 0.9375rem; }
+    .unroll-steps .paint-line { overflow-wrap: anywhere; }
+    .unroll-steps .step-facts, .unroll-steps .step-note { margin: 4px 0 0; font-size: 0.8125rem; color: var(--muted); }
+    .recipe-open { justify-self: start; min-height: 44px; }
+    .recipes-foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .recipes-add { flex: 1; min-width: 0; min-height: 44px; }
+    .recipes-edit { min-height: 44px; min-width: 44px; }
     /* MC1: the closed (compact) unit card. One tap target: the name over the game and army on the left, the stage in words over a small
        strip on the right. The stage-colour edge and the faction tint stay as on the open card. A long name or army wraps rather than being cut off. */
     li.unit.compact { padding-top: 6px; padding-bottom: 6px; cursor: pointer; }
@@ -3856,7 +3869,7 @@
             <li id="help-recipe-steps">Each step is folded to one line. Tap it to open it. Inside, <strong>More options</strong> holds the technique, coats, mix ratio, note and the <strong>Optional</strong> tick. An optional step shows the word Optional on its line. A paint you don't have shows <strong>Mark owned</strong> in the open step, and every real paint has a status menu there for Owned, Wishlist, Running low, Empty or Not owned.</li>
             <li>On a wide screen an open recipe sits beside the list, so you can open another without going back.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
-            <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
+            <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes are in the <strong>Recipes</strong> section of the unit's card: tap one to see its steps, then <strong>Open in Painting</strong>.</li>
             <li id="help-recipe-menu">On an open recipe, <strong>Edit</strong> by the title opens a short list: edit the steps and paints, duplicate it, copy it as text or delete it. <strong>Add to scheme</strong>, next to Add to shopping list, ticks which schemes hold the recipe. Nothing changes until you press <strong>Done</strong>.</li>
             <li><strong>Your Palette</strong> (top of the Painting tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li id="help-palette-swatches"><strong>List or Swatches</strong> (top of Your Palette): Swatches is what you see first: each paint is a small colour tile with a mark for its status, and List is one tap away. Tap a tile to open that paint. In an open paint, <strong>More options</strong> holds its name, brand, colour, Merge and Remove.</li>
@@ -3890,8 +3903,8 @@
             <li>A scheme card lists its recipes as rows (name, part, steps, colour dots). Tap a row to open that recipe. A scheme with more than 3 recipes shows the first 3: tap <strong>Show all</strong> for the rest.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away. Only one scheme per faction does this: if another already does, the form says so, and <strong>Use this scheme for new units instead</strong> moves it to this one.</li>
-            <li>Turn off <strong>Ask for a faction on schemes</strong> in <strong>Settings</strong>, under <strong>Recipe preferences</strong>, to make schemes without a faction. They never go onto new units by themselves; apply one to a unit from its <strong>Link a recipe…</strong> menu.</li>
-            <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
+            <li>Turn off <strong>Ask for a faction on schemes</strong> in <strong>Settings</strong>, under <strong>Recipe preferences</strong>, to make schemes without a faction. They never go onto new units by themselves; apply one to a unit from the <strong>+ Add recipe</strong> menu in its Recipes section.</li>
+            <li>In a unit's Recipes section, the <strong>+ Add recipe</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
             <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use in <strong>Settings</strong>, under <strong>Recipe preferences</strong>.</li>
           </ul>
         </details>
@@ -4259,7 +4272,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=178" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=179" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4272,17 +4285,17 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=178"></script>
-  <script src="schemes.js?v=178"></script>
-  <script src="detail-recipes.js?v=178"></script>
-  <script src="basing-tips.js?v=178"></script>
-  <script src="mentor-tips.js?v=178"></script>
-  <script src="guides-data.js?v=178"></script>
-  <script src="guides-groups.js?v=178"></script>
-  <script src="mentor-data.js?v=178"></script>
-  <script src="mentor-engine.js?v=178"></script>
-  <script src="where-to-buy.js?v=178"></script>
-  <script src="changelog.js?v=178"></script>
-  <script src="app.js?v=178"></script>
+  <script src="colour.js?v=179"></script>
+  <script src="schemes.js?v=179"></script>
+  <script src="detail-recipes.js?v=179"></script>
+  <script src="basing-tips.js?v=179"></script>
+  <script src="mentor-tips.js?v=179"></script>
+  <script src="guides-data.js?v=179"></script>
+  <script src="guides-groups.js?v=179"></script>
+  <script src="mentor-data.js?v=179"></script>
+  <script src="mentor-engine.js?v=179"></script>
+  <script src="where-to-buy.js?v=179"></script>
+  <script src="changelog.js?v=179"></script>
+  <script src="app.js?v=179"></script>
 </body>
 </html>
