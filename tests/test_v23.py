@@ -131,7 +131,7 @@ def order(page, uid):
         c.matches('label') && c.querySelector('select.jump-stage') ? 'stage'
         : c.classList.contains('each-list') ? 'each'
         : c.classList.contains('gallery') ? 'photos'
-        : c.classList.contains('panel-field') ? 'recipes'
+        : c.classList.contains('unit-recipes') ? 'recipes'
         : c.matches('label') && c.querySelector('textarea') ? 'notes'
         : c.matches('details.edit-details') ? 'edit'
         : c.classList.contains('track-each') ? 'track'
@@ -176,14 +176,15 @@ def main():
         print("\n--- 2. The order of a unit's details ---")
         seed(page)
         open_unit(page, 1)
+        # MT1: the Recipes section now sits inside Details, after the photos (the checks below now include it; the old 'panel-field' test matched the photos box by mistake)
         check("batch unit: stage, photos, recipes, paint notes, Edit details, then the buttons",
-              order(page, 1) == ["stage", "track", "photos", "notes", "edit", "buttons"], order(page, 1))
+              order(page, 1) == ["stage", "track", "photos", "recipes", "notes", "edit", "buttons"], order(page, 1))
         open_unit(page, 2)
         check("model-by-model unit: stage, each model's stage, photos, notes, Edit details, buttons",
-              order(page, 2) == ["stage", "track", "each", "photos", "notes", "edit", "buttons"], order(page, 2))
+              order(page, 2) == ["stage", "track", "each", "photos", "recipes", "notes", "edit", "buttons"], order(page, 2))
         open_unit(page, 3)
         check("a one-model unit has the same order as a batch unit, without the v61 Track button",
-              order(page, 3) == ["stage", "photos", "notes", "edit", "buttons"], order(page, 3))
+              order(page, 3) == ["stage", "photos", "recipes", "notes", "edit", "buttons"], order(page, 3))
         check("the fold holds the same boxes for a one-model unit (v61: no Track tick in it)", folded_labels(page, 3) == FOLDED, folded_labels(page, 3))
         open_unit(page, 1)   # MC1: opening units 2 and 3 closed unit 1 (one card is open at a time)
         top = page.evaluate("""(sel) => { const p = document.querySelector(sel);

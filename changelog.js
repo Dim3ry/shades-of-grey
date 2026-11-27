@@ -6,6 +6,10 @@
 
     // ================= THE CHANGELOG (the Updates tab's list: add one entry at the top for each version) =================
     const CHANGELOG = [
+      { version: "v180", date: "27 Nov 2026", changes: [
+        "Models: search by name in Filters, fold a game away with its arrow, and the Recipes section now sits inside Details after the photos.",
+        "Fixes and tidying."
+      ] },
       { version: "v179", date: "26 Nov 2026", changes: [
         "An open unit card has one Recipes section under the stage buttons. Tap a recipe to see its steps right there, then Open in Painting.",
         "Fixes and tidying."

@@ -50,9 +50,9 @@ def main():
         info = page.evaluate("""() => { const d = document.querySelector('#filters-sheet [role=dialog]');
             return { modal: d.getAttribute('aria-modal'), title: document.getElementById(d.getAttribute('aria-labelledby')).textContent,
                      labels: [...d.querySelectorAll('.fs-label')].map(l => [l.textContent, getComputedStyle(l).textTransform]), inside: d.contains(document.activeElement) }; }""")
-        check("a dialog titled Filters with four uppercase section labels, focus inside it",
+        check("a dialog titled Filters with five uppercase section labels (MT1 added Search models first), focus inside it",
               info["modal"] == "true" and info["title"] == "Filters" and info["inside"]
-              and info["labels"] == [["Game", "uppercase"], ["Faction", "uppercase"], ["Progress", "uppercase"], ["Stage", "uppercase"]], info)
+              and info["labels"] == [["Search models", "uppercase"], ["Game", "uppercase"], ["Faction", "uppercase"], ["Progress", "uppercase"], ["Stage", "uppercase"]], info)
         page.click(".fs-close"); check("the X button closes it and focus goes back to Filters", not page.evaluate(OPEN) and page.evaluate("document.activeElement.id") == "toggle-filters")
         page.click("#toggle-filters"); page.keyboard.press("Escape"); check("Escape closes it", not page.evaluate(OPEN))
         page.click("#toggle-filters"); page.mouse.click(190, 20); check("a tap on the dim area closes it", not page.evaluate(OPEN))

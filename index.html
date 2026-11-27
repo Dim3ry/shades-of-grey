@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=179"></script>
-  <script src="early.js?v=179"></script>
+  <script src="mentor-looks.js?v=180"></script>
+  <script src="early.js?v=180"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -690,6 +690,16 @@
     .unit-head.faction-head h3 { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0.01em; font-size: 0.92rem; }
     .unit-head .head-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--faction-dot, var(--border)); border: 1px solid var(--border); }
     .unit-head .head-count { margin-left: auto; font-weight: 400; opacity: 0.8; }
+    /* MT1: a game heading that folds. The whole heading is one button, 44 px tall, with an arrow before the name. */
+    .unit-head.game-head h3 { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
+    .game-fold { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 2px; background: transparent; border: 0; border-radius: var(--radius-control);
+      color: var(--muted); font: inherit; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: left; cursor: pointer; }
+    .game-fold .chev { width: 18px; height: 18px; flex: none; }
+    .game-fold-name { min-width: 0; overflow-wrap: anywhere; }
+    .game-fold .head-count { margin-left: auto; font-weight: 400; letter-spacing: 0.01em; text-transform: none; opacity: 0.8; }
+    .game-fold:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    /* MT1: the Search models box at the top of the Filters sheet (16 px so a phone does not zoom in on it). */
+    .fs-search-input { width: 100%; box-sizing: border-box; font-size: 1rem; }
     /* end SF1 */
 
     /* SF2: "Build my own order" row and the "Your order" view in the Sort models sheet. */
@@ -3774,7 +3784,7 @@
             <li id="help-wish-list">The <strong>Wishlist</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back. Paints you mark Wishlist go on your shopping list; models you want stay here until you press Got it. The <strong>Wishlist models</strong> tab on the Shopping screen shows the same models, with the same Got it.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
-            <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
+            <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows and <strong>Details</strong>. Inside Details are the stage menu, photos, <strong>Recipes</strong>, notes, then <strong>Edit details</strong> and <strong>Delete</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
             <li>In an open unit, press the right arrow to move it up a stage, or the left arrow to move it back one. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li id="help-track-each">Open a unit with more than one model, press <strong>Details</strong>, then <strong>Track models separately</strong> under its stage, to paint one model at a time. Each model gets its own row with a back button, its stage name and an up button. Each row has the date line and a thin progress bar. A unit of more than 8 models groups its rows by stage. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models.</li>
             <li id="help-jump-stage">Open a unit, press <strong>Details</strong> and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage, forwards or back. If you track each model separately, <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
@@ -3787,7 +3797,8 @@
             <li id="help-edit-details">Changing a unit: the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions">When the app needs to check before doing something, or needs a name from you, it asks in its own small box. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, <strong>Escape</strong> and the phone's <strong>Back</strong> button all mean no, and nothing changes.</li>
             <li id="help-delete-unit">Deleting a unit: press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
-            <li>Tap <strong>Filters</strong> to narrow the list by game, faction, progress or stage. Tap several stages to combine them. The button shows how many units match.</li>
+            <li id="help-filters-search">Tap <strong>Filters</strong> to narrow the list by game, faction, progress or stage. Tap several stages to combine them. Type in <strong>Search models</strong> to find a unit by any part of its name or nickname. The button shows how many filters are on.</li>
+            <li id="help-fold-games">When the list is grouped by game, tap a game heading to fold it away or open it again. The app remembers which games are folded on this device. A search or a filter shows its matches even in a folded game.</li>
           </ul>
         </details>
         <details>
@@ -4272,7 +4283,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=179" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=180" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4285,17 +4296,17 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=179"></script>
-  <script src="schemes.js?v=179"></script>
-  <script src="detail-recipes.js?v=179"></script>
-  <script src="basing-tips.js?v=179"></script>
-  <script src="mentor-tips.js?v=179"></script>
-  <script src="guides-data.js?v=179"></script>
-  <script src="guides-groups.js?v=179"></script>
-  <script src="mentor-data.js?v=179"></script>
-  <script src="mentor-engine.js?v=179"></script>
-  <script src="where-to-buy.js?v=179"></script>
-  <script src="changelog.js?v=179"></script>
-  <script src="app.js?v=179"></script>
+  <script src="colour.js?v=180"></script>
+  <script src="schemes.js?v=180"></script>
+  <script src="detail-recipes.js?v=180"></script>
+  <script src="basing-tips.js?v=180"></script>
+  <script src="mentor-tips.js?v=180"></script>
+  <script src="guides-data.js?v=180"></script>
+  <script src="guides-groups.js?v=180"></script>
+  <script src="mentor-data.js?v=180"></script>
+  <script src="mentor-engine.js?v=180"></script>
+  <script src="where-to-buy.js?v=180"></script>
+  <script src="changelog.js?v=180"></script>
+  <script src="app.js?v=180"></script>
 </body>
 </html>

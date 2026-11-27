@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import test_v31 as t
 from launch_helpers import wait_settled, _FINISH_BAR
-from common import open_unit_card   # MC1: unit cards start closed
+from common import open_unit_card, open_unit_details   # MC1: unit cards start closed
 
 results = []
 
@@ -158,7 +158,7 @@ def main():
             return { same: JSON.stringify(ids) === JSON.stringify(want), n: ids.length,
                      colour: document.querySelector('li.unit[data-id="9"]').style.getPropertyValue('--faction-colour') }; }""")
         check("a new faction colour rebuilds exactly the cards of that faction, in its colour", r["same"] and r["n"] == 38 and r["colour"] == "#22aa66", r)
-        open_unit_card(page, 'li.unit[data-id="4"]')   # MC1: the recipes show on an open card; it is opened before the rename, so the redraw must update it
+        open_unit_details(page, 'li.unit[data-id="4"]')   # MT1: the recipes show inside Details of an open card; it is opened before the rename, so the redraw must update it
         page.click('li.unit[data-id="4"] .recipes-head')   # UC1: the recipe names are in the Recipes section, which starts closed
         page.evaluate("() => { recipeById(101).name = 'Armour blue renamed'; render(); }")
         chip = page.evaluate("""() => document.querySelector('li.unit[data-id="4"] .recipe-row-name').textContent""")

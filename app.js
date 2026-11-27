@@ -6575,7 +6575,7 @@
     // ================= FILTERS =================
 
     // What the Units list is showing. An empty stages Set means "every stage".
-    const filters = { hobby: "", faction: "", stages: new Set(), repaint: false };
+    const filters = { hobby: "", faction: "", stages: new Set(), repaint: false, search: "" };   // MT1: search = the "Search models" box
 
     // v21.1: SELECT MODE on the Units tab. selectMode = are the tick boxes showing;
     // ticked = the ids of the ticked units. Neither is saved: it's only for this visit.
@@ -6596,6 +6596,7 @@
       filters.faction = "";
       filters.stages = new Set();
       filters.repaint = false;
+      filters.search = "";
     }
 
     // Jump from the dashboard to the Units tab with some filters already set.
@@ -6614,7 +6615,37 @@
     function isVisible(m) {
       return inScope(m) &&
              (filters.stages.size === 0 || stagesOf(m).some(st => filters.stages.has(st))) &&
-             (!filters.repaint || m.repaint);
+             (!filters.repaint || m.repaint) &&
+             matchesSearch(m);
+    }
+    // MT1: "Search models": any part of the unit name or nickname, ignoring upper and lower case. A box of only spaces searches nothing.
+    function searchText() { return String(filters.search || "").trim().toLowerCase(); }
+    function matchesSearch(m) {
+      const q = searchText();
+      return !q || `${m.name || ""}\n${m.nickname || ""}`.toLowerCase().includes(q);
+    }
+    // MT1: how many Filters are on (the search box counts as one).
+    function activeFilterCount() {
+      return (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) + (filters.stages.size > 0 ? 1 : 0) + (filters.repaint ? 1 : 0) + (searchText() ? 1 : 0);
+    }
+    // MT1: FOLDED GAMES. The games folded away in the Models list are kept on this device (settings.foldedGames, a list of game names; "" is
+    // "No game"). A fold only hides while nothing is searched or filtered, and only when the list is grouped by game; it is never
+    // changed by a search. A view setting, so another open window keeps its own and backups do not carry it.
+    function foldedGames() { return new Set(Array.isArray(settings.foldedGames) ? settings.foldedGames.filter(g => typeof g === "string") : []); }
+    const gameKeyOf = (m) => (m.hobby || "").trim();
+    function listGroupedByGame() { return currentUnitSort().levels[0].f === "game"; }
+    function foldsApply() { return listGroupedByGame() && activeFilterCount() === 0; }
+    function hiddenByFold(m) { return foldsApply() && foldedGames().has(gameKeyOf(m)); }
+    function setGameFolded(game, folded) {
+      const now = foldedGames();
+      if (folded) now.add(game); else now.delete(game);
+      settings.foldedGames = [...now].slice(0, 200);
+      saveSettings();
+    }
+    // Anything that jumps to a unit opens its game first.
+    function revealUnit(id) {
+      const m = models.find(x => x.id === id);
+      if (m && foldedGames().has(gameKeyOf(m))) setGameFolded(gameKeyOf(m), false);
     }
 
     // Do two lists of stage numbers contain exactly the same stages?
@@ -7718,12 +7749,11 @@
 
       const visible = sortUnits(models.filter(isVisible));   // SF1: in the chosen order
       drawSortButton();
-      const activeCount = (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) +
-                          (filters.stages.size > 0 ? 1 : 0) + (filters.repaint ? 1 : 0);
+      const activeCount = activeFilterCount();
       const anyFilter = activeCount > 0;
       clearFiltersButton.classList.toggle("hidden", !anyFilter);
       // The summary line always shows what you're looking at, with the Filters sheet shut.
-      const scope = [filters.faction || filters.hobby].filter(Boolean).join("");
+      const scope = [filters.faction || filters.hobby, searchText() ? `\u201c${filters.search.trim()}\u201d` : ""].filter(Boolean).join(" ");
       filterNote.textContent = anyFilter
         ? `${scope ? scope + ": " : ""}${visible.length} of ${plural(models.length, "unit")} (${plural(modelCount(visible), "model")})`
         : `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}`;
@@ -7741,10 +7771,11 @@
       // so you never move something that's off screen). No units at all: no Select.
       if (models.length === 0 && selectMode) selectMode = false;
       if (!selectMode) ticked.clear();
-      const shownIds = new Set(visible.map(m => m.id));
+      const shown = visible.filter(m => !hiddenByFold(m));   // MT1: units in a folded game are off screen too
+      const shownIds = new Set(shown.map(m => m.id));
       for (const id of [...ticked]) if (!shownIds.has(id)) ticked.delete(id);
       selectButton.classList.toggle("hidden", models.length === 0);
-      refreshSelectBar(visible);
+      refreshSelectBar(shown);
 
       renderUnitSide(visible);   // v79
       if (models.length === 0 || visible.length === 0) { stopUnitQueue(); list.replaceChildren(); }
@@ -8087,8 +8118,7 @@
       head.appendChild(more);
       item.append(head, buildStepper(model, part));
 
-      // UC1: its recipes, in one fold-away section under the stepper (closed to start with).
-      item.appendChild(buildRecipesSection(model));
+      // MT1: the Recipes section no longer sits under the stepper: it is inside Details (see buildPanel), after the photos.
 
       // v79: on a wide screen the details show in the side pane (renderUnitSide) and the card is just marked as open.
       if (isOpen && unitWide.matches) item.setAttribute("aria-current", "true");
@@ -8427,7 +8457,7 @@
     function redrawUnitCard(model, focusSelector) {
       const card = !unitWide.matches && [...list.children].find(li => li.dataset.id === String(model.id));
       if (card) card.replaceWith(cardFor(model, sharedCardKey(), true)); else render();
-      if (focusSelector) { const again = document.querySelector(`li.unit[data-id="${model.id}"] ${focusSelector}`); if (again) again.focus({ preventScroll: true }); }
+      if (focusSelector) { const again = document.querySelector(`li.unit[data-id="${model.id}"] ${focusSelector}, .unit-side-card[data-id="${model.id}"] ${focusSelector}`); if (again) again.focus({ preventScroll: true }); }
     }
 
     function buildRecipeSteps(recipe) {
@@ -8612,6 +8642,9 @@
       recipeDraft = null;
       renderRecipes();
       if (!back) { window.scrollTo(0, 0); return; }
+      revealUnit(back.id);   // MT1: its game opens first
+      openIds.add(back.id);   // MT1: Details and Recipes come back open (Recipes was open when "Open in Painting" was tapped)
+      recipesOpenIds.add(back.id);
       openCardId = back.id;
       render();
       showTab("units");
@@ -8888,6 +8921,9 @@
 
       // Photos come straight after the stage (v23), then recipes, then the scheme notes.
       panel.appendChild(buildGallery(model));
+
+      // MT1: the stage controls, then photos, then recipes (UC1's fold-away section, shown only while Details is open), then notes, then edit and delete.
+      panel.appendChild(buildRecipesSection(model));
 
       panel.appendChild(noteLabel);
 
@@ -9605,7 +9641,7 @@
       selectMoveSlot.appendChild(menu);
     }
     function selectAllShown() {
-      const visible = models.filter(isVisible);
+      const visible = models.filter(m => isVisible(m) && !hiddenByFold(m));   // MT1: not the units hidden in a folded game
       if (visible.every(m => ticked.has(m.id))) ticked.clear();
       else for (const m of visible) ticked.add(m.id);
       renderUnits();
@@ -9613,7 +9649,7 @@
     // Move every ticked unit (all models of a model-by-model unit) to one stage.
     function moveTicked(stage) {
       if (!Number.isInteger(stage) || stage < 0 || stage >= STAGES.length) return;
-      const chosen = models.filter(m => ticked.has(m.id) && isVisible(m));
+      const chosen = models.filter(m => ticked.has(m.id) && isVisible(m) && !hiddenByFold(m));
       const moving = chosen.filter(m => m.each ? !m.stages.every(s => s === stage) : m.stage !== stage);
       selectMode = false;     // select mode closes after a move
       ticked.clear();
@@ -10980,9 +11016,17 @@
       const gameOf = (m) => (m.hobby || "").trim(), factionOf = (m) => (m.faction || "").trim();
       const items = [];
       let lastGame = null, lastFaction = null;
+      // MT1: with the list grouped by game and nothing searched or filtered, a game heading folds and unfolds; a folded game's units are left out.
+      const canFold = gameHeads && activeFilterCount() === 0, folded = canFold ? foldedGames() : new Set();
       sorted.forEach((m, i) => {
         const newGame = gameHeads && gameOf(m) !== lastGame;
-        if (newGame) { lastGame = gameOf(m); items.push({ head: { kind: "game", text: gameOf(m) || "No game" } }); }
+        if (newGame) {
+          lastGame = gameOf(m);
+          const isFolded = folded.has(lastGame);
+          items.push({ head: { kind: "game", text: lastGame || "No game", game: lastGame, canFold, folded: isFolded,
+            count: isFolded ? sorted.filter(x => gameOf(x) === lastGame).length : 0 } });
+        }
+        if (canFold && folded.has(gameOf(m))) return;
         if (factionHeads && (newGame || factionOf(m) !== lastFaction)) {
           lastFaction = factionOf(m);
           let count = 0;
@@ -11009,6 +11053,37 @@
         count.className = "head-count";
         count.textContent = head.noun === "wish" ? `${head.count} on Wishlist` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
         h.append(dot, name, count);
+      } else if (head.canFold) {
+        // MT1: the whole heading is one 44 px button with an arrow: pointing down while the game is open, to the right while it is folded.
+        li.classList.add("game-head");
+        const fold = document.createElement("button");
+        fold.type = "button";
+        fold.className = "game-fold";
+        fold.dataset.game = head.game;
+        fold.setAttribute("aria-expanded", String(!head.folded));
+        fold.setAttribute("aria-label", `${head.text}, ${head.folded ? "folded, " + plural(head.count, "unit") : "open"}`);
+        const name = document.createElement("span");
+        name.className = "game-fold-name";
+        name.textContent = head.text;
+        fold.append(chevron(head.folded ? "right" : "down"), name);
+        if (head.folded) {
+          const count = document.createElement("span");
+          count.className = "head-count";
+          count.textContent = plural(head.count, "unit");
+          fold.appendChild(count);
+        }
+        fold.addEventListener("click", () => {
+          const top = fold.getBoundingClientRect().top;
+          setGameFolded(head.game, !head.folded);
+          render();
+          const again = [...list.querySelectorAll(".game-fold")].find(b => b.dataset.game === head.game);
+          if (again) {
+            again.focus({ preventScroll: true });
+            const drift = again.getBoundingClientRect().top - top;
+            if (Math.abs(drift) > 1) window.scrollBy(0, drift);
+          }
+        });
+        h.appendChild(fold);
       } else h.textContent = head.text;
       li.appendChild(h);
       return li;
@@ -11472,7 +11547,10 @@
       const held = document.activeElement && state.body.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
       const top = state.body.scrollTop;
       const todo = todoStages(), done = doneStages();
-      state.body.replaceChildren(
+      // MT1: the search box (state.search) is not drawn again, so typing keeps its focus and the keyboard stays up.
+      if (state.search.input.value !== filters.search) state.search.input.value = filters.search;
+      for (const child of [...state.body.children]) if (child !== state.search.wrap) child.remove();
+      state.body.append(
         fsSection("Game", [
           fsChip("game:", "All games", !filters.hobby, () => chooseGame("")),
           ...games.map(g => fsChip("game:" + g, g, filters.hobby === g, () => chooseGame(g))),
@@ -11493,7 +11571,7 @@
       );
       state.body.scrollTop = top;
       if (held) { const again = state.body.querySelector(`[data-fk="${CSS.escape(held)}"]`); if (again) again.focus({ preventScroll: true }); }
-      state.clear.disabled = !(filters.hobby || filters.faction || filters.stages.size || filters.repaint);
+      state.clear.disabled = activeFilterCount() === 0;
       state.show.textContent = "Show " + plural(visible.length, "unit");
     }
     // SF4: how far up the message sits while the sheet is open: just above the sheet's Clear all / Show buttons (the sheet fills the bottom edge, so that is the height of that row).
@@ -11554,11 +11632,30 @@
         if (event.isComposing) return;
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeFiltersSheet(); }
         else if (event.key === "Tab") {
-          const stops = [...box.querySelectorAll("button")].filter(b => !b.disabled);
+          const stops = [...box.querySelectorAll("button, input")].filter(b => !b.disabled);
           wrapTab(event, stops);
         }
       };
-      filtersSheet = { backdrop, body, clear, show, opener: document.activeElement, onKey };
+      // MT1: "Search models" sits at the top of the sheet. It updates the list as you type.
+      const searchWrap = document.createElement("div");
+      searchWrap.className = "fs-section fs-search";
+      const searchLabel = document.createElement("label");
+      searchLabel.className = "fs-label";
+      searchLabel.htmlFor = "fs-search-input";
+      searchLabel.textContent = "Search models";
+      const searchInput = document.createElement("input");
+      searchInput.type = "search";
+      searchInput.id = "fs-search-input";
+      searchInput.className = "fs-search-input";
+      searchInput.autocomplete = "off";
+      searchInput.spellcheck = false;
+      searchInput.maxLength = 100;
+      searchInput.enterKeyHint = "search";
+      searchInput.addEventListener("input", () => { filters.search = searchInput.value; render(); });
+      searchInput.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); searchInput.blur(); } });
+      searchWrap.append(searchLabel, searchInput);
+      body.appendChild(searchWrap);
+      filtersSheet = { backdrop, body, clear, show, opener: document.activeElement, onKey, search: { wrap: searchWrap, input: searchInput } };
       close.addEventListener("click", closeFiltersSheet);
       show.addEventListener("click", closeFiltersSheet);
       clear.addEventListener("click", () => { clearFilters(); render(); });
@@ -11700,6 +11797,7 @@
     // the bottom, which would otherwise cover it. Smooth unless the phone asks for less motion.
     const JUST_ADDED_MS = 2500;
     function showNewUnit(id) {
+      if (foldedGames().has(gameKeyOf(models.find(m => m.id === id) || {}))) { revealUnit(id); render(); }   // MT1: a new unit's game opens
       unitsUpTo(id);   // MS1
       const card = list.querySelector(`li.unit[data-id="${id}"]`);
       if (card) {
@@ -12017,6 +12115,7 @@
     function goToUnit(id) {
       setModelsView("models");   // WL1
       clearFilters();
+      revealUnit(id);   // MT1
       openIds.clear();
       openIds.add(id);
       openCardId = id;   // MC1: its card opens too (and the one that was open closes)
@@ -24103,12 +24202,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=179".
+    // "?v=" number on ALL FOURTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, changelog, app), e.g. "app.js?v=180".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v179";
+    const APP_VERSION = "v180";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -24717,7 +24816,7 @@
     // own copy in memory and saved over the other's changes. Now, when the OTHER window
     // saves, the browser tells this one (the "storage" event) and we load its changes.
     // Screen choices (which tab is open, sort order...) stay this window's own.
-    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "unitSort"];
+    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "unitSort", "foldedGames"];
     const withoutViewSettings = (s) => {
       const copy = { ...s };
       for (const key of VIEW_ONLY_SETTINGS) delete copy[key];
