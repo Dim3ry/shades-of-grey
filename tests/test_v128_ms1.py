@@ -163,6 +163,8 @@ def main():
         page.evaluate("() => { recipeById(101).name = 'Armour blue renamed'; render(); }")
         chip = page.evaluate("""() => document.querySelector('li.unit[data-id="4"] .recipe-row-name').textContent""")
         check("a recipe's new name reaches the cards that link it", "Armour blue renamed" in chip, chip)
+        page.click('li.unit[data-id="4"] .details-toggle')   # MT1: a card with Details open is always built fresh (by design); shut them so the checks below are about kept cards
+        page.wait_for_timeout(300)
         page.evaluate(MARK)
         page.evaluate("() => { const i = models.findIndex(m => m.id === 10); models.splice(i, 1); render(); }")
         r = page.evaluate(FRESH)

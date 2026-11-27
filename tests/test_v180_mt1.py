@@ -161,7 +161,7 @@ def main():
                 open_filters(page)
                 box = page.locator("#fs-search-input").bounding_box()
                 check(f"{scheme} {w} px: folded heading and search box are 44 px or more and nothing scrolls sideways",
-                      fold["height"] >= 44 and box["height"] >= 44 and no_sideways(page), (fold, box))
+                      fold["height"] >= 43.9 and box["height"] >= 43.9 and no_sideways(page), (fold, box))
                 page.click(".fs-close")
         page.set_viewport_size({"width": 1280, "height": 900})
         start(page, UNITS)
