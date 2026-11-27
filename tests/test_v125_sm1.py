@@ -166,9 +166,14 @@ def main():
         wait_settled(page)
         r = page.evaluate(TOGGLE, "3")
         check("closing Details: only that card is drawn again, panel shut", r["fresh"] == ["3"] and not r["panel"], r)
-        # MC1: closed cards show no buttons, so no chevrons; the open card (4) has its four (Back, Up, Details and, since UC1 (v179), the Recipes header)
+        # MC1: closed cards show no buttons, so no chevrons; the open card (3) has three with Details shut (Back, Up and Details).
+        # MT1 (v180): the Recipes header (and its chevron, added by UC1 in v179) moved inside Details, so it counts only once Details is open (four then).
         svg = page.evaluate("""() => [3, 1, 2, 149].map(id => document.querySelectorAll('li.unit[data-id="' + id + '"] svg').length)""")
-        check("the open card still has its own chevrons (drawn once, then copied)", svg[0] == 4 and svg[1:] == [0, 0, 0], svg)
+        check("the open card still has its own chevrons (drawn once, then copied)", svg[0] == 3 and svg[1:] == [0, 0, 0], svg)
+        page.evaluate(TOGGLE, "3")
+        wait_settled(page)
+        svg = page.evaluate("""() => document.querySelectorAll('li.unit[data-id="3"] svg').length""")
+        check("MT1: with Details open the card also has the Recipes chevron (four)", svg == 4, svg)
         check("no sideways scroll on Models", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
         check("no page errors", not errors, errors)
