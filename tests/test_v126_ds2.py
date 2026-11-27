@@ -16,7 +16,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
 from launch_helpers import app_ready, leave_launch, quiet, tap_tab
-from common import open_unit_card   # MC1: unit cards start closed
+from common import open_unit_card, open_unit_details   # MC1: unit cards start closed
 
 results = []
 
@@ -146,7 +146,7 @@ def main():
         check("jumping to a unit (goToUnit) draws Units first: the renamed unit is there, open",
               page.evaluate("(() => { const c = document.querySelector('#unit-list li.unit[data-id=\"4\"]'); return !!c && c.textContent.includes('Renamed squad') && !!c.querySelector('.panel'); })()"))
         page.evaluate("() => { book.recipes[0].name = 'Deep blue armour'; render(); }")
-        open_unit_card(page, '#unit-list li.unit[data-id="1"]')   # MC1: the recipe buttons are inside the opened card
+        open_unit_details(page, '#unit-list li.unit[data-id="1"]')   # MT1: the Recipes section is inside Details now
         # UC1: the recipe buttons are gone; open the Recipes section, unroll the recipe and tap Open in Painting
         page.click('#unit-list li.unit[data-id="1"] .recipes-head')
         page.click('#unit-list li.unit[data-id="1"] .recipe-row')

@@ -1,6 +1,6 @@
 """UC1 tests for Minifolio: the Recipes section on an open unit card (new behaviour only).
 
-1. An open card has "Recipes · N" right under the stepper, closed to start with; the old recipe chips, Paints row and Paint recipes list are gone.
+1. An open card has "Recipes · N" inside Details (MT1 moved it there from under the stepper), closed to start with; the old recipe chips, Paints row and Paint recipes list are gone.
 2. Open: one row per recipe (name, paint dots, arrow). A tap unrolls its steps (technique, paint, mix, coats, ratio, note, optional); one at a time.
 3. Open in Painting goes to the recipe; Back returns to the same unit, still open, at the same scroll place.
 4. + Add recipe links a recipe (and offers schemes and a new recipe); Edit shows unlink buttons and turns into Done.
@@ -12,7 +12,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
-from common import open_unit_card
+from common import open_unit_card, open_unit_details
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -54,18 +54,17 @@ def main():
         start(page, [SQUAD, BARE] + FILLER, schemes=[SCHEME])
         open_unit_card(page, CARD)
         head = card().locator(".recipes-head")
-        check("Recipes · 2 sits right under the stepper, with Details still shut",
-              head.inner_text().strip() == "Recipes · 2" and card().locator(".panel").count() == 0
-              and page.evaluate("(s) => document.querySelector(s + ' .stepper').nextElementSibling.classList.contains('unit-recipes')", CARD))
+        check("MT1: with Details shut the open card has no Recipes section", head.count() == 0)
+        open_unit_details(page, CARD)
+        page.wait_for_timeout(250)
+        check("Recipes · 2 sits inside Details, after the photos",
+              head.inner_text().strip() == "Recipes · 2" and card().locator(".panel .unit-recipes").count() == 1
+              and page.evaluate("(s) => document.querySelector(s + ' .gallery').nextElementSibling.classList.contains('unit-recipes')", CARD))
         check("it is closed to start with", head.get_attribute("aria-expanded") == "false" and card().locator(".recipe-row").count() == 0)
         check("no recipe chips on the card", card().locator(".recipe-links, .recipe-chip").count() == 0)
-        card().locator(".details-toggle").click()
-        page.wait_for_timeout(250)
         check("Details no longer holds the Paints row or the Paint recipes list",
               card().locator(".paints-row, .unit-paints, .linked-list").count() == 0 and "Paint recipes" not in card().locator(".panel").inner_text()
               and card().locator(".panel select.jump-stage").count() == 1)
-        card().locator(".details-toggle").click()
-        page.wait_for_timeout(250)
 
         print("--- 2. Rows and steps ---")
         head.click()
@@ -89,7 +88,8 @@ def main():
         print("--- 3. Open in Painting and back ---")
         card().locator(".recipe-row").nth(0).click()
         page.wait_for_timeout(250)
-        page.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); window.scrollTo(0, window.scrollY + r.top - 20); }", CARD)
+        # MT1: the recipe is deeper in the card now (inside Details), so the Open in Painting button is put on screen first; tapping it then does not scroll the page
+        page.evaluate("(s) => { const r = document.querySelector(s + ' .recipe-open').getBoundingClientRect(); window.scrollTo(0, window.scrollY + r.top - 300); }", CARD)
         page.wait_for_timeout(200)
         y = page.evaluate("window.scrollY")
         card().locator(".recipe-open").click()
@@ -131,7 +131,7 @@ def main():
         check("Done hides the unlink buttons", card().locator(".recipe-unlink").count() == 0)
 
         print("--- 5. No recipes ---")
-        open_unit_card(page, "li.unit[data-id='2']")
+        open_unit_details(page, "li.unit[data-id='2']")
         bare = card(2)
         check("Recipes · 0 with + Add recipe and no Edit", bare.locator(".recipes-head").inner_text().strip() == "Recipes · 0")
         bare.locator(".recipes-head").click()
@@ -142,7 +142,7 @@ def main():
         for theme in ("classic", "parchment", "forge", "bench"):
             for scheme in ("dark", "light"):
                 start(page, [SQUAD], settings={"appearance": scheme, "theme": theme})
-                open_unit_card(page, CARD)
+                open_unit_details(page, CARD)
                 card().locator(".recipes-head").click()
                 page.wait_for_timeout(200)
                 card().locator(".recipe-row").nth(0).click()
@@ -160,12 +160,14 @@ def main():
         for width in (900, 1280, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             start(page, [SQUAD])
-            open_unit_card(page, CARD)
+            open_unit_details(page, CARD)
             page.wait_for_timeout(250)
-            card().locator(".recipes-head").click()
+            # MT1: from 900 px Details show in the side pane, so the Recipes section is there
+            side = page.locator(".unit-side-card[data-id='1']")
+            side.locator(".recipes-head").click()
             page.wait_for_timeout(250)
-            check(f"{width} px: the Recipes section is on the card and nothing scrolls sideways",
-                  card().locator(".recipe-row").count() == 2 and no_sideways(page))
+            check(f"{width} px: the Recipes section is in the Details pane and nothing scrolls sideways",
+                  side.locator(".recipe-row").count() == 2 and no_sideways(page))
 
         check("no page errors", not errors, errors)
         browser.close()
